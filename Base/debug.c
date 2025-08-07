@@ -5,5 +5,5 @@ void Error(const char* message, const int line) {
 }
 
 void ErrorChar(const char errorChar, const int line) {
-  fprintf(stderr, "[Line %i] Error: Unknown character %c.", line, errorChar);
+  fprintf(stderr, "[Line %d] Error: Unknown character [%c].\n", line, errorChar);
 }

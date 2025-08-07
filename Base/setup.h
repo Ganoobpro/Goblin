@@ -1,6 +1,10 @@
 #ifndef GOBLIN_SETUP_H
 #define GOBLIN_SETUP_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
 // Type aliases
 typedef long long ll;
 typedef unsigned long long ull;
@@ -19,6 +23,9 @@ typedef long double ld;
 #define null               NULL ==
 
 // Ternaries and conditionals.
+#define ifnot(...)   if(!(__VA_ARGS__))
+#define elif         else if
+#define elifnot(...) else if(!(__VA_ARGS__))
 #define when
 #define then        ?
 #define other       :
@@ -26,7 +33,18 @@ typedef long double ld;
 #define otherwhen   :
 #define only        : NULL
 
-#define until(...) while (!(__VA_ARGS__))
+// Loops and blocks. Lisp, Lua, Ruby.
+#define until(...)   while(!(__VA_ARGS__))
+#define always       while(1)
+#define forever      while(1)
+#define loop         while(1)
+#define indefinitely while(1)
+#define never        while(0)
+#define comment      while(0)
+#define repeat       do
+#define done         break
+#define finish       break
+#define pass         continue
 
 // Short typing
 #define between(a, x, b)    ((a) <= (x) && (x) <= (b))

@@ -1,7 +1,7 @@
 #ifndef GOBLIN_SCANNER_H
 #define GOBLIN_SCANNER_H
 
-#include "../setup.h"
+#include "../Base/setup.h"
 #include "../Base/debug.h"
 
 typedef enum {

@@ -1,13 +1,23 @@
+///////////// PREVIOUS = CURRENT, CURRENT = NEXT
 #include "scanner.h"
 
 Scanner scanner;
-bool IsAtTheEnd();
-bool Match(const char targetChar);
+static inline bool IsAtTheEnd();
+static inline bool IsNumber();
+static inline bool IsAlphabet();
+static void SkipUnnecessary();
+static bool Match(const char targetChar);
+static Token TokenString();
+static Token TokenNumber();
 
 void InitScanner(const char* source) {
   scanner.start = source;
   scanner.current = source;
   scanner.line = 1;
+}
+
+void PrintToken(Token* token) {
+  printf("[Token] %.*s %i\n", token->length, token->start, token->type);
 }
 
 Token MakeToken(TokenType type) {
@@ -20,30 +30,10 @@ Token MakeToken(TokenType type) {
 
 Token ScanToken() {
   scanner.start = scanner.current;
-
-  // Skip
-  if (*scanner.current == '\0')
+  if (IsAtTheEnd())
     return MakeToken(TOKEN_EOF);
 
-  while (*scanner.current == '\t' || *scanner.current == ' ' ||
-         *scanner.current == '\n' || *scanner.current == '#' ||
-        (*scanner.current == '/'  && scanner.current[1] == '*'))
-  {
-    if (*scanner.current == '\n')
-      scanner.line++;
-
-    // Comment
-    if (*scanner.start == '#')
-      while (!IsAtTheEnd() && *scanner.current++ != '\n') {}
-    else if (*scanner.start == '/' || scanner.start[1] == '*')
-      while (!IsAtTheEnd() && (*scanner.current++ != '*' || *scanner.current != '/')) {}
-    else
-      scanner.current++;
-
-    scanner.start = scanner.current;
-  }
-
-
+  SkipUnnecessary();
 
   // Switch tree
   switch (*scanner.current++) {
@@ -92,24 +82,62 @@ Token ScanToken() {
     case '{': return MakeToken(TOKEN_LEFT_BRACE);
     case '}': return MakeToken(TOKEN_RIGHT_BRACE);
 
+    // Literals
+    case '\"':
+    case '\'':
+      return TokenString();
+
     // Others
     case ',': return MakeToken(TOKEN_COMMA);
     case '.': return MakeToken(TOKEN_DOT);
     case ';': return MakeToken(TOKEN_SEMICOLON);
 
     default:
-      ErrorChar(scanner.current[-1], scanner.line);
+      ErrorChar(*scanner.start, scanner.line);
       return MakeToken(TOKEN_ERROR);
   }
 }
 
 
 
-bool IsAtTheEnd() {
-  return *scanner.current == '\0';
+static inline bool IsAtTheEnd() {
+  return scanner.current[-1] == '\0';
 }
 
-bool Match(const char targetChar) {
+static inline bool IsNumber() {
+  return between('0', scanner.current[-1], '9');
+}
+
+static inline bool IsAlphabet() {
+  return (between('a', scanner.current[-1], 'z') ||
+          between('A', scanner.current[-1], 'Z'));
+}
+
+
+
+static void SkipUnnecessary() {
+  while (*scanner.current == '\t' || *scanner.current == ' ' ||
+         *scanner.current == '\n' || *scanner.current == '#' ||
+        (*scanner.current == '/'  && scanner.current[1] == '*'))
+  {
+    if (*scanner.current == '\n')
+      scanner.line++;
+
+    // Comment
+    if (*scanner.current == '#') {
+      until (IsAtTheEnd() || *scanner.current++ == '\n') {}
+      scanner.line++;
+    } else if (*scanner.current == '/' && scanner.current[1] == '*')
+      until (IsAtTheEnd() || (*scanner.current++ == '*' && *scanner.current == '/')) {}
+
+    ifnot (IsAtTheEnd())
+      scanner.current++;
+  }
+
+  scanner.start = scanner.current;
+}
+
+static bool Match(const char targetChar) {
   if (IsAtTheEnd()) return false;
   if (*scanner.current == targetChar) {
     scanner.current++;
@@ -117,4 +145,23 @@ bool Match(const char targetChar) {
   }
 
   return false;
+}
+
+// TODO: Add built-in format-string
+static Token TokenString() {
+  // If start = ", must end with "
+  // If start = ', must end with '
+  while (!IsAtTheEnd() && *scanner.current++ != *scanner.start) {}
+
+  if (IsAtTheEnd()) {
+    Error("Unfinished string.", scanner.line);
+    return MakeToken(TOKEN_ERROR);
+  }
+
+  return MakeToken(TOKEN_STRING);
+}
+
+static Token TokenNumber() {
+  // TODO: Add e, 0x, 0b
+  return MakeToken(TOKEN_NUMBER);
 }
