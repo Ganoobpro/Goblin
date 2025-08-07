@@ -5,6 +5,7 @@ static void SkipUnnecessary();
 static bool Match(const char targetChar);
 static Token TokenString();
 static Token TokenNumber();
+static Token Trie();
 
 #define Peek           (scanner.current[-1])
 #define PeekNext       (*scanner.current)
@@ -105,6 +106,8 @@ Token ScanToken() {
     default:
       if (IsNumber)
         return TokenNumber();
+      elif (IsAlphabet)
+        return Trie();
 
       ErrorChar(*scanner.start, scanner.line);
       return MakeToken(TOKEN_ERROR);
@@ -166,6 +169,64 @@ static Token TokenNumber() {
     do {scanner.current++;} while (!IsAtTheEnd && IsNearNumber);
 
   return MakeToken(TOKEN_NUMBER);
+}
+
+static Token Identifier() {
+  while (!IsAtTheEnd && IsNearAlphabet) {scanner.current++;}
+  return MakeToken(TOKEN_IDENTIFY);
+}
+
+static inline bool CompareTheRest(const uint8_t start, const uint8_t restLen,
+                           const char* rest)
+{
+  if (memcmp(scanner.current+start-1, rest, restLen) == 0) {
+    scanner.current += start+restLen-1;
+    return true;
+  }
+
+  return false;
+}
+
+static Token Trie() {
+  switch (Peek) {
+    case 'a':
+      if (CompareTheRest(1, 2, "nd")) return MakeToken(TOKEN_AND_AND);
+    case 'o':
+      if (CompareTheRest(1, 1, "r")) return MakeToken(TOKEN_OR_OR);
+    case 'm':
+      if (CompareTheRest(1, 4, "od")) return MakeToken(TOKEN_MODULE);
+    case 'i':
+      if (CompareTheRest(1, 1, "f")) return MakeToken(TOKEN_IF);
+    case 'e':
+      if (CompareTheRest(1, 3, "lse")) return MakeToken(TOKEN_ELSE);
+    case 'w':
+      if (CompareTheRest(1, 4, "hile")) return MakeToken(TOKEN_WHILE);
+    case 'c':
+      if (CompareTheRest(1, 4, "lass")) return MakeToken(TOKEN_CLASS);
+    case 't':
+      if (CompareTheRest(1, 3, "rue")) return MakeToken(TOKEN_TRUE);
+
+    case 'n':
+      switch (PeekNext) {
+        case 'o':
+          if (CompareTheRest(2, 1, "t")) return MakeToken(TOKEN_NOT);
+        case 'i':
+          if (CompareTheRest(2, 3, "ill")) return MakeToken(TOKEN_NILL);
+      }
+    case 'f':
+      switch (PeekNext) {
+        case 'a':
+          if (CompareTheRest(2, 3, "lse")) return MakeToken(TOKEN_FALSE);
+        case 'o':
+          if (CompareTheRest(2, 1, "r")) return MakeToken(TOKEN_FOR);
+        case 'u':
+          if (CompareTheRest(2, 1, "n")) return MakeToken(TOKEN_FUNC);
+          if (CompareTheRest(2, 2, "nc")) return MakeToken(TOKEN_FUNC);
+          if (CompareTheRest(2, 6, "nction")) return MakeToken(TOKEN_FUNC);
+      }
+    default:
+      return Identifier();
+  }
 }
 
 #undef Peek

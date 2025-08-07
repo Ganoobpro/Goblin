@@ -1,12 +1,4 @@
-+  
--
- /*
-  * dasfasdfasdf
-  */
-///
-***
-"
-hello
-world
-"
-12.32 2a  
+a = 0
+for (a < 0; a++) {
+  print(helloworld)
+}

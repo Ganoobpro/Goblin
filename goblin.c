@@ -25,14 +25,11 @@ static void RunFile(const char* filename) {
 }
 
 int main(int args, char* argv[]) {
-  printf("%d\n", between('0','a','9'));
-
   if (args == 1)
     Repl();
-  elif (args == 2) {
-    printf("----------  %s\n", argv[1]);
+  elif (args == 2)
     RunFile(argv[1]);
-  } else {
+  else {
     fprintf(stderr, "Usage: goblin [filename]\n");
     exit(64);
   }
