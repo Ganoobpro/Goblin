@@ -25,6 +25,8 @@ static void RunFile(const char* filename) {
 }
 
 int main(int args, char* argv[]) {
+  printf("%d\n", between('0','a','9'));
+
   if (args == 1)
     Repl();
   elif (args == 2) {
