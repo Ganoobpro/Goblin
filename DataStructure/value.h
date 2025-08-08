@@ -1,7 +1,10 @@
 #ifndef GOBLIN_VALUE_H
 #define GOBLIN_VALUE_H
 
-#include "object.h"
+#include "memory.h"
+typedef struct Obj Obj;
+typedef struct ObjString ObjString;
+typedef struct ObjList ObjList;
 
 typedef enum {
   NILL,
@@ -22,7 +25,7 @@ typedef struct {
 #define MAKE_NILL           ((Value){NILL, {.number=0}})
 #define MAKE_BOOLEAN(value) ((Value){BOOLEAN, {.boolean=(value)}})
 #define MAKE_NUMBER(value)  ((Value){NUMBER, {.number=(value)}})
-#define MAKE_OBJECT(value)  ((Value){OBJECT, {.obj=(value)}})
+#define MAKE_OBJECT(objPtr) ((Value){OBJECT, {.obj=(objPtr)}})
 
 #define IS_NILL(value)      ((value).type == NILL)
 #define IS_BOOLEAN(value)   ((value).type == BOOLEAN)
