@@ -4,8 +4,8 @@
 void* SafeReallocate(void* pointer, int newSize);
 
 //////////  DYNAMIC ARRAY  //////////
-#define GROWCAPACITY(oldCapacity) \
-  (oldCapacity) = when ((oldCapacity) < 8) then 8 otherwise (oldCapacity)*2
+#define GROWCAPACITY(capacity) \
+  (capacity) = when ((capacity) < 8) then 8 otherwise (capacity)*2
 #define GROWARRAY(type, pointer, newCapacity) \
   (pointer)=((type)*)SafeReallocate(pointer, sizeof(type)*newCapacity)
 #define FREEARRAY(pointer) \
