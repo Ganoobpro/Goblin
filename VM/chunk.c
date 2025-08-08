@@ -1,29 +1,6 @@
 #include "chunk.h"
+#include "../DataStructure/value.h"
 
-// VALUE ARRAY
-static void InitValueArray(ValueArray* constants) {
-  constants->counter = 0;
-  constants->capacity = 0;
-  constants->values = NULL;
-}
-
-static void FreeValueArray(ValueArray* constants) {
-  constants->counter = 0;
-  constants->capacity = 0;
-  FREEARRAY(constants->values);
-}
-
-static void AddValue(ValueArray* constants, Value value) {
-  if (constants->counter >= constants->capacity) {
-    GROWCAPACITY(constants->capacity);
-    GROWARRAY(Value, constants->values, constants->capacity);
-  }
-
-  constants->values[constants->counter] = value;
-  constants->counter++;
-}
-
-// CHUNK OF CODE
 void InitChunk(Chunk* chunk) {
   chunk->counter = 0;
   chunk->capacity = 0;

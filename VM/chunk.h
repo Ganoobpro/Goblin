@@ -15,15 +15,13 @@ typedef enum {
 typedef struct {
   uint8_t counter;
   uint8_t capacity;
-  Value* values;
-} ValueArray;
-
-typedef struct {
-  uint8_t counter;
-  uint8_t capacity;
   int* lines;
   OpCode* code;
   ValueArray constants;
 } Chunk;
+
+void InitChunk(Chunk* chunk);
+void FreeChunk(Chunk* chunk);
+ConstIndex AddConstants(Chunk* chunk, Value value);
 
 #endif

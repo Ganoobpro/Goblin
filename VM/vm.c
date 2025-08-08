@@ -1,7 +1,13 @@
 #include "vm.h"
 
-VM vm;
+VM vm; // The UNIQUE :shocked:
 
 void InitVM() {
-  vm.chunk = 
+  InitChunk(&vm.chunk);
+  vm.ip = 0;
+  vm.stackTop = vm.stack;
+}
+
+void FreeVM() {
+  FreeChunk(&vm.chunk);
 }

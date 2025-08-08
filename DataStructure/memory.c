@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "value.c"
 
 void* SafeReallocate(void* pointer, int newSize) {
   if (newSize == 0) {
