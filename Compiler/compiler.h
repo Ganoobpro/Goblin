@@ -1,0 +1,29 @@
+#ifndef GOBLIN_COMPILER_H
+#define GOBLIN_COMPILER_H
+
+typedef void (*ParseFunc)();
+
+typedef enum {
+  PREC_NULL,         //
+  PREC_ASSIGNMENT,   //
+  PREC_BIT_SHIFT,    // << >>
+  PREC_BIT_OP,       // & | ~ ^
+  PREC_OR,           // ||
+  PREC_AND,          // &&
+  PREC_EQUALITY,     // == !=
+  PREC_COMPARARISON, // > >= < <=
+  PREC_SPECIAL_DIV,  // % //
+  PREC_TERM,         // + -
+  PREC_FACTOR,       // * /
+  PREC_POWER,        // **
+  PREC_UNARY,        // - !
+  PREC_PRIMARY       // Literals & Grouping
+} Precedence;
+
+typedef struct {
+  ParseFunc prefix;
+  ParseFunc infix;
+  Precedence precedence;
+} ParseRules;
+
+#endif
