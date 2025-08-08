@@ -47,14 +47,14 @@ typedef enum {
 
 typedef struct {
   const char* start;
-  int length;
+  uint8_t length;
   TokenType type;
 } Token;
 
 typedef struct {
   const char* start;
   const char* current;
-  int line;
+  uint8_t line;
 } Scanner;
 
 #endif
