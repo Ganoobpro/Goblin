@@ -1,0 +1,4 @@
+📚 ONE-LINE ONLY macros : MACRONAME    📚
+📝 Other macros         : MACRO_NAME   📝
+💡 Functions            : FunctionName 💡
+✨ Variable             : variableName ✨
