@@ -1,5 +1,12 @@
 #include "table.h"
 
+#define IS_EMPTY_ENTRY(entryPtr) ((entryPtr)->key == NULL && IS_NILL((entryPtr)->value))
+#define IS_TOMBSTONE(entryPtr)   ((entryPtr)->key == NULL && (!IS_NILL((entryPtr)->value)))
+
+static Entry* FindEntry(Table* table, ObjString* key);
+static void ReallocateTableToNewEntries(Table* table, Entry* entries);
+static void AdjustTable(Table* table);
+
 void InitTable(Table* table) {
   table->counter = 0;
   table->capacity = 0;
@@ -29,10 +36,19 @@ Entry* TableGet(Table* table, ObjString* key) {
   forever {
     Entry* entry = table->entries[index];
     if (entry->key == key) return entry;
-    if (empty (empty->key)) return NULL;
+    if (IS_EMPTY_ENTRY(entry)) return NULL;
 
     index = (index + 1) & (table->capacity - 1);
   }
+}
+
+void TableDelete(Table* table, ObjString* key) {
+  Entry* entry = FindEntry(table, key);
+  if (empty (entry->key)) return;
+
+  entry->key = NULL;
+  if (IS_NILL(entry->value))
+    entry->value = MAKE_NUMBER(0);
 }
 
 static Entry* FindEntry(Table* table, ObjString* key) {
@@ -43,7 +59,8 @@ static Entry* FindEntry(Table* table, ObjString* key) {
 
   forever {
     Entry* entry = table->entries[index];
-    if (entry->key == key || entry->key == NULL) {
+    // Dont use IS_EMPTY_ENTRY to reuse TOMBSTONE
+    if (entry->key == key || empty (entry->key)) {
       return entry;
     }
 
@@ -53,15 +70,23 @@ static Entry* FindEntry(Table* table, ObjString* key) {
   }
 }
 
-static void ReallocateTableToNewEntries(Table* table, Entry* entries) {
+// TODO: I must build something to clean old table, right?
+static uint32_t ReallocateTableToNewEntries(Table* table, Entry* entries) {
+  uint32_t newCounter = table->counter;
+
   for (uint32_t i = 0u; i < table->counter; i++) {
     Entry* entry = table->entries + i;
-    if (empty (entry->key)) continue;
+    // If <EMPTY ENTRY> (but shorter in this condition)
+    if (empty (entry->key)) {
+      newCounter--;
+    }
 
     Entry* destination = FindEntry(entries, entry->key);
     destination->key = key;
     destination->value = value;
   }
+
+  return newCounter;
 }
 
 static void AdjustTable(Table* table) {
@@ -73,6 +98,9 @@ static void AdjustTable(Table* table) {
     entries[i].value = MAKE_NILL;
   }
 
-  ReallocateTableToNewEntries(table, entries);
+  table->counter = ReallocateTableToNewEntries(table, entries);
   table->entries = entries;
 }
+
+#undef IS_EMPTY_ENTRY
+#undef IS_TOMBSTONE
