@@ -1,7 +1,7 @@
 #ifndef GOBLIN_VALUE_H
 #define GOBLIN_VALUE_H
 
-#include "memory.h"
+#include "d_array.h"
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
 typedef struct ObjList ObjList;

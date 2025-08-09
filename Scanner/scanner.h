@@ -54,7 +54,7 @@ typedef struct {
 typedef struct {
   const char* start;
   const char* current;
-  uint8_t line;
+  uint32_t line;
 } Scanner;
 
 #endif

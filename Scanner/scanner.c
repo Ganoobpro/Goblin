@@ -177,7 +177,7 @@ static Token Identifier() {
 }
 
 static inline bool CompareTheRest(const uint8_t start, const uint8_t restLen,
-                           const char* rest)
+                                  const char* rest)
 {
   if (memcmp(scanner.current+start-1, rest, restLen) == 0) {
     scanner.current += start+restLen-1;

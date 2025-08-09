@@ -4,7 +4,7 @@
 #include "../Base/memory.h"
 #include "value.h"
 
-#define CONST_MAX  UINT8_MAX
+#define CONST_MAX UINT8_MAX
 
 typedef uint8_t ConstIndex;
 
@@ -13,10 +13,10 @@ typedef enum {
 } OpCode;
 
 typedef struct {
-  uint8_t counter;
-  uint8_t capacity;
-  int* lines;
-  OpCode* code;
+  uint32_t counter;
+  uint32_t capacity;
+  uint32_t* lines;
+  uint8_t* code;
   ValueArray constants;
 } Chunk;
 

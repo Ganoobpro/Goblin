@@ -14,18 +14,19 @@ typedef struct {
 
 typedef struct {
   Obj obj;
-  uint8_t length;
+  uint32_t hash;
+  uint32_t length;
   char* start;
 } ObjString;
 
 typedef struct {
   Obj obj;
-  uint8_t counter;
-  uint8_t capacity;
+  uint32_t counter;
+  uint32_t capacity;
   Value* list;
 } ObjList;
 
-Obj* CopyStringToObj(const char* str, const uint8_t length);
+Obj* CopyStringToObj(const char* str, const uint32_t length);
 
 #define MAKE_STRING(value)  MAKE_OBJECT(CopyStringToObj((value),sizeof(value)))
 
