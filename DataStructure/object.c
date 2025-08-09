@@ -5,7 +5,7 @@ static inline uint32_t hashString(const char* strPtr) {
   // FNV-1a
   uint32_t h = 2166136261u;
   while (*strPtr) {
-    h ^= (uint8_t);
+    h ^= (uint8_t)*strPtr;
     h *= 16777619u;
   }
 
@@ -28,4 +28,6 @@ Obj* CopyStringToObj(const char* strValue, const uint32_t length) {
   memcpy(objStr->start, strValue, length);
   objStr->start[length] = '\0';
   objStr->hash = hashString(objStr->start);
+
+  return (Obj*)objStr;
 }

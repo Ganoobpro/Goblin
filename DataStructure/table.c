@@ -1,10 +1,11 @@
 #include "table.h"
 
-#define IS_EMPTY_ENTRY(entryPtr) ((entryPtr)->key == NULL && IS_NILL((entryPtr)->value))
-#define IS_TOMBSTONE(entryPtr)   ((entryPtr)->key == NULL && (!IS_NILL((entryPtr)->value)))
+#define IS_EMPTY_ENTRY(entryPtr) (IS_NILL((entryPtr)->value))
+#define IS_TOMBSTONE(entryPtr)   (!IS_NILL((entryPtr)->value))
 
-static Entry* FindEntry(Table* table, ObjString* key);
-static void ReallocateTableToNewEntries(Table* table, Entry* entries);
+static Entry* FindEntry(Entry* entries, uint32_t capacity,
+                        ObjString* key, bool returnTombstone);
+static uint32_t ReallocateTableToNewEntries(Table* table, Entry* entries);
 static void AdjustTable(Table* table);
 
 void InitTable(Table* table) {
@@ -23,27 +24,20 @@ void TableInsert(Table* table, ObjString* key, Value value) {
     AdjustTable(table);
   }
 
-  Entry* entry = FindEntry(table, key);
-  if (empty (entry->key)) table->counter++;
+  Entry* entry = FindEntry(table->entries, table->capacity, key, true);
+  if (empty (entry->key) && IS_EMPTY_ENTRY(entry)) table->counter++;
 
   entry->key = key;
   entry->value = value;
 }
 
 Entry* TableGet(Table* table, ObjString* key) {
-  uint32_t index = ObjString->hashNumber & (table->capacity - 1);
-
-  forever {
-    Entry* entry = table->entries[index];
-    if (entry->key == key) return entry;
-    if (IS_EMPTY_ENTRY(entry)) return NULL;
-
-    index = (index + 1) & (table->capacity - 1);
-  }
+  Entry* entry = FindEntry(table->entries, table->capacity, key, false);
+  return entry;
 }
 
 void TableDelete(Table* table, ObjString* key) {
-  Entry* entry = FindEntry(table, key);
+  Entry* entry = FindEntry(table->entries, table->capacity, key, true);
   if (empty (entry->key)) return;
 
   entry->key = NULL;
@@ -51,22 +45,27 @@ void TableDelete(Table* table, ObjString* key) {
     entry->value = MAKE_NUMBER(0);
 }
 
-static Entry* FindEntry(Table* table, ObjString* key) {
+static Entry* FindEntry(Entry* entries, uint32_t capacity,
+                        ObjString* key, bool returnTombstone) {
   // index = hash % capacity
   // you can easily prove that <hash % capacity> = <hash & (capacity - 1)>
   // with capacity = 2 to the power of x
-  uint32_t index = ObjString->hashNumber & (table->capacity - 1);
+  uint32_t index = key->hash & (capacity - 1);
 
   forever {
-    Entry* entry = table->entries[index];
-    // Dont use IS_EMPTY_ENTRY to reuse TOMBSTONE
-    if (entry->key == key || empty (entry->key)) {
-      return entry;
+    Entry* entry = &entries[index];
+    if (entry->key == key) return entry;
+
+    if (empty (entry->key)) {
+      if (returnTombstone && IS_TOMBSTONE(entry))
+        return entry;
+      if (IS_EMPTY_ENTRY(entry))
+        return entry;
     }
 
     // index++
     // <index = (index + 1) % capacity> safer
-    index = (index + 1) & (table->capacity - 1);
+    index = (index + 1) & (capacity - 1);
   }
 }
 
@@ -80,9 +79,10 @@ static uint32_t ReallocateTableToNewEntries(Table* table, Entry* entries) {
       newCounter--;
     }
 
-    Entry* destination = FindEntry(entries, oldEntry->key);
-    destination->key = table->key;
-    destination->value = table->value;
+    Entry* destination = FindEntry(entries, table->capacity,
+                                   oldEntry->key, true);
+    destination->key = oldEntry->key;
+    destination->value = oldEntry->value;
     newCounter++;
   }
 

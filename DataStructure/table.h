@@ -1,8 +1,6 @@
 #ifndef GOBLIN_TABLE_H
 #define GOBLIN_TABLE_H
 
-#include "object.h"
-
 #define TABLE_MAX_LOAD .75
 
 typedef struct {
