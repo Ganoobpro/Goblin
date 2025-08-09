@@ -70,20 +70,20 @@ static Entry* FindEntry(Table* table, ObjString* key) {
   }
 }
 
-// TODO: I must build something to clean old table, right?
 static uint32_t ReallocateTableToNewEntries(Table* table, Entry* entries) {
-  uint32_t newCounter = table->counter;
+  uint32_t newCounter = 0u;
 
   for (uint32_t i = 0u; i < table->counter; i++) {
-    Entry* entry = table->entries + i;
+    Entry* oldEntry = table->entries + i;
     // If <EMPTY ENTRY> (but shorter in this condition)
-    if (empty (entry->key)) {
+    if (empty (oldEntry->key)) {
       newCounter--;
     }
 
-    Entry* destination = FindEntry(entries, entry->key);
-    destination->key = key;
-    destination->value = value;
+    Entry* destination = FindEntry(entries, oldEntry->key);
+    destination->key = table->key;
+    destination->value = table->value;
+    newCounter++;
   }
 
   return newCounter;
@@ -99,6 +99,8 @@ static void AdjustTable(Table* table) {
   }
 
   table->counter = ReallocateTableToNewEntries(table, entries);
+
+  FREEARRAY(table->entries);
   table->entries = entries;
 }
 
