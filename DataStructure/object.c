@@ -19,13 +19,13 @@ static inline uint32_t hashString(const char* strPtr) {
   return h;
 }
 
-Obj* CopyStringToObj(const char* str, const uint32_t length) {
+Obj* CopyStringToObj(const char* strValue, const uint32_t length) {
   ObjString* objStr = malloc(sizeof(ObjString));
   objStr->obj.type = OBJ_STRING;
   objStr->length = length;
 
   GROWARRAY(char, objStr->start, length+1);
-  memcpy(objStr->start, str, length);
+  memcpy(objStr->start, strValue, length);
   objStr->start[length] = '\0';
   objStr->hash = hashString(objStr->start);
 }
