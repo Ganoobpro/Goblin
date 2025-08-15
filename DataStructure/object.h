@@ -8,6 +8,7 @@ typedef enum {
 
 typedef struct Obj {
   ObjType type;
+  struct Obj* Obj;
 } Obj;
 
 typedef struct ObjString {
