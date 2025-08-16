@@ -15,4 +15,10 @@ typedef struct {
   Entry* entries;
 } Table;
 
+void InitTable(Table* table);
+void FreeTable(Table* table);
+void TableInsert(Table* table, ObjString* key, Value value);
+Entry* TableGet(Table* table, ObjString* key);
+void TableDelete(Table* table, ObjString* key);
+
 #endif

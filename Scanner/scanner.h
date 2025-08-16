@@ -41,8 +41,8 @@ typedef enum {
   TOKEN_COMMA, TOKEN_DOT,
   TOKEN_SEMICOLON,
 
-  // ERROR || END
-  TOKEN_ERROR, TOKEN_EOF
+  // SYSTEM
+  TOKEN_ERROR, TOKEN_EOL, TOKEN_EOF
 } TokenType;
 
 typedef struct {

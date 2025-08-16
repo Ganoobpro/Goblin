@@ -39,7 +39,8 @@ Token ScanToken() {
   if (IsAtTheEnd)
     return MakeToken(TOKEN_EOF);
 
-  SkipUnnecessary();
+  if (SkipUnnecessary())
+    return MakeToken(TOKEN_EOL);
 
   // Switch tree
   switch (*scanner.current++) {
@@ -116,13 +117,17 @@ Token ScanToken() {
 
 
 
-static void SkipUnnecessary() {
+static bool SkipUnnecessary() {
+  bool endline = false;
+
   while (*scanner.current == '\t' || *scanner.current == ' ' ||
          *scanner.current == '\n' || *scanner.current == '#' ||
         (*scanner.current == '/'  && scanner.current[1] == '*'))
   {
-    if (*scanner.current == '\n')
+    if (*scanner.current == '\n') {
       scanner.line++;
+      endline = true;
+    }
 
     // Comment
     if (*scanner.current == '#') {
@@ -136,6 +141,7 @@ static void SkipUnnecessary() {
   }
 
   scanner.start = scanner.current;
+  return endline;
 }
 
 static bool Match(const char targetChar) {

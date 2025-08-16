@@ -1,6 +1,15 @@
 #ifndef GOBLIN_COMPILER_H
 #define GOBLIN_COMPILER_H
 
+#include "../VM/vm.h"
+
+typedef struct {
+  Token previous;
+  Token current;
+  bool hadError;
+  bool panicMode;
+} Parser;
+
 typedef void (*ParseFunc)();
 
 typedef enum {
