@@ -15,12 +15,12 @@ void InitTable(Table* table) {
 }
 
 void FreeTable(Table* table) {
-  FREEARRAY(table->entries);
+  table->entries = FREE_ARRAY(table->entries);
 }
 
 void TableInsert(Table* table, ObjString* key, Value value) {
   if (table->counter >= table->capacity * TABLE_MAX_LOAD) {
-    GROWCAPACITY(table->capacity);
+    table->capacity = GROW_CAPACITY(table->capacity);
     AdjustTable(table);
   }
 
@@ -91,7 +91,7 @@ static uint32_t ReallocateTableToNewEntries(Table* table, Entry* entries) {
 
 static void AdjustTable(Table* table) {
   Entry* entries = NULL;
-  GROWARRAY(Entry, entries, table->capacity);
+  entries = GROW_ARRAY(Entry, entries, table->capacity);
 
   for (uint32_t i = 0u; i < table->capacity; i++) {
     entries[i].key = NULL;
@@ -100,7 +100,7 @@ static void AdjustTable(Table* table) {
 
   table->counter = ReallocateTableToNewEntries(table, entries);
 
-  FREEARRAY(table->entries);
+  table->entries = FREE_ARRAY(table->entries);
   table->entries = entries;
 }
 

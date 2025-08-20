@@ -1,14 +1,17 @@
 #ifndef GOBLIN_CHUNK_H
 #define GOBLIN_CHUNK_H
 
-#include "../Base/memory.h"
-#include "value.h"
-
 #define CONST_MAX UINT8_MAX
 
 typedef uint8_t ConstIndex;
 
 typedef enum {
+  OP_NUM_DIV, OP_MODULE,
+  OP_ADD, OP_SUB,
+  OP_MUL, OP_DIV,
+  OP_POWER, OP_NEGATIVE,
+
+  OP_CONSTANT,
   OP_RETURN
 } OpCode;
 
@@ -22,6 +25,7 @@ typedef struct {
 
 void InitChunk(Chunk* chunk);
 void FreeChunk(Chunk* chunk);
-ConstIndex AddConstants(Chunk* chunk, Value value);
+void WriteChunk(Chunk* chunk, uint32_t line, uint8_t byte);
+ConstIndex AddConstant(Chunk* chunk, Value value);
 
 #endif

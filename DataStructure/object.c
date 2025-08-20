@@ -24,7 +24,7 @@ Obj* CopyStringToObj(const char* strValue, const uint32_t length) {
   objStr->obj.type = OBJ_STRING;
   objStr->length = length;
 
-  GROWARRAY(char, objStr->start, length+1);
+  objStr->start = GROW_ARRAY(char, objStr->start, length+1);
   memcpy(objStr->start, strValue, length);
   objStr->start[length] = '\0';
   objStr->hash = hashString(objStr->start);

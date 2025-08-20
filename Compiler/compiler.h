@@ -1,7 +1,7 @@
 #ifndef GOBLIN_COMPILER_H
 #define GOBLIN_COMPILER_H
 
-#include "../VM/vm.h"
+#include "../VM/chunk.h"
 
 typedef struct {
   Token previous;
@@ -10,10 +10,10 @@ typedef struct {
   bool panicMode;
 } Parser;
 
-typedef void (*ParseFunc)();
+typedef void (*ParseFn)();
 
 typedef enum {
-  PREC_NULL,         //
+  PREC_NONE,         //
   PREC_ASSIGNMENT,   //
   PREC_BIT_SHIFT,    // << >>
   PREC_BIT_OP,       // & | ~ ^
@@ -30,9 +30,11 @@ typedef enum {
 } Precedence;
 
 typedef struct {
-  ParseFunc prefix;
-  ParseFunc infix;
+  ParseFn prefix;
+  ParseFn infix;
   Precedence precedence;
 } ParseRules;
+
+bool Compile(Chunk* currentChunk, const char* source);
 
 #endif

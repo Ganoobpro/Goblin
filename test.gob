@@ -1,4 +1,1 @@
-a = 0
-for (a < 0; a++) {
-  print(helloworld)
-}
+10+1

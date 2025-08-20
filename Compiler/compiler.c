@@ -1,81 +1,207 @@
 #include "compiler.h"
-#include "../Scanner/scanner.h"
 
-//////////  Parser  //////////
 Parser parser;
+Chunk* currentCompilerChunk;
 
-void InitParser() {
+static void ParseErrorAt(Token* token, const char* errorMessage);
+static void ParseErrorAtCurr(const char* errorMessage);
+static inline ParseRules* GetRule(TokenType type);
+static void Advance();
+static void Consume(TokenType type, const char* errorMessage);
+static void ParsePrecedence(Precedence precedence);
+static void EmitByte(uint8_t opcode);
+static void EmitConstant(Value value);
+static void EmitReturn();
+static void Number();
+static void Unary();
+static void Binary();
+
+ParseRules rules[] = {
+  [TOKEN_IF] =                {NULL,          NULL,          PREC_NONE},
+  [TOKEN_ELSE] =              {NULL,          NULL,          PREC_NONE},
+  [TOKEN_FOR] =               {NULL,          NULL,          PREC_NONE},
+  [TOKEN_WHILE] =             {NULL,          NULL,          PREC_NONE},
+  [TOKEN_FUNC] =              {NULL,          NULL,          PREC_NONE},
+  [TOKEN_CLASS] =             {NULL,          NULL,          PREC_NONE},
+
+  [TOKEN_ADD] =               {NULL,          Binary,        PREC_TERM},
+  [TOKEN_MINUS] =             {Unary,         Binary,        PREC_TERM},
+  [TOKEN_MUL] =               {NULL,          Binary,        PREC_FACTOR},
+  [TOKEN_DIV] =               {NULL,          Binary,        PREC_FACTOR},
+  [TOKEN_NUM_DIV] =           {NULL,          Binary,        PREC_SPECIAL_DIV},
+  [TOKEN_MODULE] =            {NULL,          Binary,        PREC_SPECIAL_DIV},
+  [TOKEN_POWER] =             {NULL,          Binary,        PREC_POWER},
+  [TOKEN_OR] =                {NULL,          NULL,          PREC_NONE},
+  [TOKEN_AND] =               {NULL,          NULL,          PREC_NONE},
+  [TOKEN_BITWISE ] =          {NULL,          NULL,          PREC_NONE},
+  [TOKEN_XOR] =               {NULL,          NULL,          PREC_NONE},
+  [TOKEN_LEFT_SHIFT] =        {NULL,          NULL,          PREC_NONE},
+  [TOKEN_RIGHT_SHIFT] =       {NULL,          NULL,          PREC_NONE},
+  [TOKEN_OR_OR] =             {NULL,          NULL,          PREC_NONE},
+  [TOKEN_AND_AND] =           {NULL,          NULL,          PREC_NONE},
+  [TOKEN_EQUAL_EQUAL] =       {NULL,          NULL,          PREC_NONE},
+  [TOKEN_EQUAL] =             {NULL,          NULL,          PREC_NONE},
+  [TOKEN_LESS] =              {NULL,          NULL,          PREC_NONE},
+  [TOKEN_LESS_EQUAL] =        {NULL,          NULL,          PREC_NONE},
+  [TOKEN_BIGGER] =            {NULL,          NULL,          PREC_NONE},
+  [TOKEN_BIGGER_EQUAL] =      {NULL,          NULL,          PREC_NONE},
+  [TOKEN_NOT] =               {NULL,          NULL,          PREC_NONE},
+  [TOKEN_NOT_EQUAL] =         {NULL,          NULL,          PREC_NONE},
+
+  [TOKEN_LEFT_PARENTHESIS] =  {NULL,          NULL,          PREC_NONE},
+  [TOKEN_RIGHT_PARENTHESIS] = {NULL,          NULL,          PREC_NONE},
+  [TOKEN_LEFT_BRACKET] =      {NULL,          NULL,          PREC_NONE},
+  [TOKEN_RIGHT_BRACKET] =     {NULL,          NULL,          PREC_NONE},
+  [TOKEN_LEFT_BRACE] =        {NULL,          NULL,          PREC_NONE},
+  [TOKEN_RIGHT_BRACE] =       {NULL,          NULL,          PREC_NONE},
+
+  [TOKEN_IDENTIFY] =          {NULL,          NULL,          PREC_PRIMARY},
+  [TOKEN_NUMBER] =            {Number,        NULL,          PREC_PRIMARY},
+  [TOKEN_STRING] =            {NULL,          NULL,          PREC_PRIMARY},
+  [TOKEN_NILL] =              {NULL,          NULL,          PREC_PRIMARY},
+  [TOKEN_TRUE] =              {NULL,          NULL,          PREC_PRIMARY},
+  [TOKEN_FALSE] =             {NULL,          NULL,          PREC_PRIMARY},
+
+  [TOKEN_COMMA] =             {NULL,          NULL,          PREC_NONE},
+  [TOKEN_DOT] =               {NULL,          NULL,          PREC_NONE},
+  [TOKEN_SEMICOLON] =         {NULL,          NULL,          PREC_NONE},
+  [TOKEN_EOL] =               {NULL,          NULL,          PREC_NONE},
+  [TOKEN_EOF] =               {NULL,          NULL,          PREC_NONE}
+};
+
+
+
+bool Compile(Chunk* currentChunk, const char* source) {
+  currentCompilerChunk = currentChunk;
+  InitScanner(source);
   parser.hadError = false;
   parser.panicMode = false;
+  Advance();
+
+  ParsePrecedence(PREC_ASSIGNMENT);
+  Consume(TOKEN_EOF, "Expect EOF at the end");
+  EmitReturn();
+  return !parser.hadError;
 }
 
-void Compiler() {
+
+
+static void ParseErrorAt(Token* token, const char* errorMessage) {
+  if (parser.panicMode) return;
+  parser.panicMode = true;
+
+  fprintf(stderr, "[Line %d] Error", token->line);
+
+  switch (token->type) {
+    case TOKEN_EOF:
+      fprintf(stderr, " at the end:");
+    case TOKEN_ERROR:
+      break;
+
+    default:
+      fprintf(stderr, " at '%.*s':", token->length, token->start);
+  };
+
+  fprintf(stderr, " %s.\n", errorMessage);
+  parser.hadError = true;
+}
+
+static void ParseErrorAtCurr(const char* errorMessage) {
+  ParseErrorAt(&parser.previous, errorMessage);
+}
+
+
+
+static inline ParseRules* GetRule(TokenType type) {
+  return &rules[type];
+}
+
+static void Advance() {
   parser.previous = parser.current;
+
+  while (parser.current.type != TOKEN_EOF) {
+    parser.current = ScanToken();
+    if (parser.current.type != TOKEN_ERROR && parser.current.type != TOKEN_EOL)
+      return;
+
+    if (parser.current.type == TOKEN_ERROR)
+      parser.hadError = true;
+  }
 }
 
-static void Consume() {
+static void Consume(TokenType type, const char* errorMessage) {
+  if (parser.current.type == type) {
+    Advance();
+    return;
+  }
 
+  ParseErrorAtCurr(errorMessage);
+}
+
+static void ParsePrecedence(Precedence precedence) {
+  Advance();
+  ParseFn prefixRule = GetRule(parser.previous.type)->prefix;
+  if (null prefixRule) {
+    ParseErrorAtCurr("Expect expression");
+    return;
+  }
+  prefixRule();
+
+  while (precedence <= GetRule(parser.current.type)->precedence) {
+    Advance();
+    ParseFn infixRule = GetRule(parser.previous.type)->infix;
+    infixRule();
+  }
 }
 
 
 
-//////////  Parser Rules  //////////
-ParserRules rules[] = {
-  // COMMANDS
-  [TOKEN_IF] =                {NULL,          NULL,          NULL},
-  [TOKEN_ELSE] =              {NULL,          NULL,          NULL},
-  [TOKEN_FOR] =               {NULL,          NULL,          NULL},
-  [TOKEN_WHILE] =             {NULL,          NULL,          NULL},
-  [TOKEN_FUNC] =              {NULL,          NULL,          NULL},
-  [TOKEN_CLASS] =             {NULL,          NULL,          NULL},
-                              {NULL,          NULL,          NULL}, 
-  // OPERATORS
-  // Math operators
-  [TOKEN_ADD] =               {NULL,          NULL,          NULL},
-  [TOKEN_MINUS] =             {NULL,          NULL,          NULL},
-  [TOKEN_MUL] =               {NULL,          NULL,          NULL},
-  [TOKEN_DIV] =               {NULL,          NULL,          NULL},
-  [TOKEN_NUM_DIV] =           {NULL,          NULL,          NULL},
-  [TOKEN_MODULE] =            {NULL,          NULL,          NULL},
-  [TOKEN_POWER] =             {NULL,          NULL,          NULL},
-  // Bit operators
-  [TOKEN_OR] =                {NULL,          NULL,          NULL},
-  [TOKEN_AND] =               {NULL,          NULL,          NULL},
-  [TOKEN_BITWISE ] =          {NULL,          NULL,          NULL},
-  [TOKEN_XOR] =               {NULL,          NULL,          NULL},
-  [TOKEN_LEFT_SHIFT] =        {NULL,          NULL,          NULL},
-  [TOKEN_RIGHT_SHIFT] =       {NULL,          NULL,          NULL},
-  // Condition
-  [TOKEN_OR_OR] =             {NULL,          NULL,          NULL},
-  [TOKEN_AND_AND] =           {NULL,          NULL,          NULL},
-  [TOKEN_EQUAL_EQUAL] =       {NULL,          NULL,          NULL},
-  [TOKEN_EQUAL] =             {NULL,          NULL,          NULL},
-  [TOKEN_LESS] =              {NULL,          NULL,          NULL},
-  [TOKEN_LESS_EQUAL] =        {NULL,          NULL,          NULL},
-  [TOKEN_BIGGER] =            {NULL,          NULL,          NULL},
-  [TOKEN_BIGGER_EQUAL] =      {NULL,          NULL,          NULL},
-  [TOKEN_NOT] =               {NULL,          NULL,          NULL},
-  [TOKEN_NOT_EQUAL] =         {NULL,          NULL,          NULL},
+static void EmitByte(uint8_t opcode) {
+  WriteChunk(currentCompilerChunk, parser.previous.line, opcode);
+}
 
-  // GROUPING
-  [TOKEN_LEFT_PARENTHESIS] =  {NULL,          NULL,          NULL},
-  [TOKEN_RIGHT_PARENTHESIS] = {NULL,          NULL,          NULL},
-  [TOKEN_LEFT_BRACKET] =      {NULL,          NULL,          NULL},
-  [TOKEN_RIGHT_BRACKET] =     {NULL,          NULL,          NULL},
-  [TOKEN_LEFT_BRACE] =        {NULL,          NULL,          NULL},
-  [TOKEN_RIGHT_BRACE] =       {NULL,          NULL,          NULL},
+static void EmitConstant(Value value) {
+  EmitByte(OP_CONSTANT);
+  EmitByte(AddConstant(currentCompilerChunk, value));
+}
 
-  // LITERALS
-  [TOKEN_IDENTIFY] =          {NULL,          NULL,          NULL},
-  [TOKEN_NUMBER] =            {NULL,          NULL,          NULL},
-  [TOKEN_STRING] =            {NULL,          NULL,          NULL},
-  [TOKEN_NILL] =              {NULL,          NULL,          NULL},
-  [TOKEN_TRUE] =              {NULL,          NULL,          NULL},
-  [TOKEN_FALSE] =             {NULL,          NULL,          NULL},
+static void EmitReturn() {
+  EmitByte(OP_RETURN);
+}
 
-  // OTHERS
-  [TOKEN_COMMA] =             {NULL,          NULL,          NULL},
-  [TOKEN_DOT] =               {NULL,          NULL,          NULL},
-  [TOKEN_SEMICOLON] =         {NULL,          NULL,          NULL},
-  [TOKEN_EOL] =               {NULL,          NULL,          NULL}
-};
+static void Number() {
+  EmitConstant(MAKE_NUMBER(strtod(parser.previous.start, NULL)));
+}
+
+static void Unary() {
+  TokenType operatorType = parser.previous.type;
+  ParsePrecedence(PREC_UNARY);
+
+  switch (operatorType) {
+    case TOKEN_MINUS:
+      EmitByte(OP_NEGATIVE);
+      return;
+
+    // Others
+    default:
+      return;
+  };
+}
+
+static void Binary() {
+  TokenType operatorType = parser.previous.type;
+  ParsePrecedence((GetRule(operatorType)->precedence) + 1);
+
+  switch (operatorType) {
+    case TOKEN_NUM_DIV: EmitByte(OP_NUM_DIV); break;
+    case TOKEN_MODULE:  EmitByte(OP_MODULE);  break;
+    case TOKEN_ADD:     EmitByte(OP_ADD);     break;
+    case TOKEN_MINUS:   EmitByte(OP_SUB);     break;
+    case TOKEN_MUL:     EmitByte(OP_MUL);     break;
+    case TOKEN_DIV:     EmitByte(OP_DIV);     break;
+    case TOKEN_POWER:   EmitByte(OP_POWER);   break; 
+
+    default:
+      return;
+  };
+}

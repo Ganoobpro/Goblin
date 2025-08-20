@@ -3,5 +3,6 @@
 
 void Error(const char* message, const int line);
 void ErrorChar(const char errorChar, const int line);
+void ErrorSystem(const char* message);
 
 #endif

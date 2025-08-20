@@ -49,6 +49,7 @@ typedef struct {
   const char* start;
   uint8_t length;
   TokenType type;
+  uint32_t line;
 } Token;
 
 typedef struct {
@@ -56,5 +57,9 @@ typedef struct {
   const char* current;
   uint32_t line;
 } Scanner;
+
+void InitScanner(const char* source);
+void PrintToken(Token* token);
+Token ScanToken();
 
 #endif

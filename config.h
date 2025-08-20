@@ -4,7 +4,9 @@
 #include "./Base/setup.h"
 #include "./DataStructure/datastructure.h"
 #include "./Scanner/scanner.c"
-#include "./VM/interpreter.c"
+#include "./Compiler/compiler.c"
+#include "./VM/chunk.c"
+#include "./interpreter.c"
 #include "./Base/debug.c"
 
 #endif

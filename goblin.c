@@ -1,28 +1,8 @@
 #include "config.h"
 
-static void Repl() {
-  char line[1024];
-  forever {
-    printf("> ");
-
-    if (!fgets(line, sizeof(char), stdin)) {
-      printf("\n");
-      break;
-    }
-
-    interpreter(line);
-  }
-}
-
+static void Repl();
 static char* ReadFile(const char* filename);
-static void RunFile(const char* filename) {
-  char* source = ReadFile(filename);
-  InterpreterResult result = interpreter(source);
-  free(source);
-
-  if (result == INTERPRETER_COMPILE_ERROR) exit(65);
-  if (result == INTERPRETER_RUNTIME_ERROR) exit(70);
-}
+static void RunFile(const char* filename);
 
 int main(int args, char* argv[]) {
   if (args == 1)
@@ -35,6 +15,20 @@ int main(int args, char* argv[]) {
   }
 
   return 0;
+}
+
+static void Repl() {
+  char line[1024];
+  forever {
+    printf("> ");
+
+    if (!fgets(line, sizeof(char), stdin)) {
+      printf("\n");
+      break;
+    }
+
+    Interpreter(line);
+  }
 }
 
 static char* ReadFile(const char* filename) {
@@ -61,4 +55,13 @@ static char* ReadFile(const char* filename) {
 
   fclose(file);
   return buffer;
+}
+
+static void RunFile(const char* filename) {
+  char* source = ReadFile(filename);
+  InterpreterResult result = Interpreter(source);
+  free(source);
+
+  if (result == INTERPRETER_COMPILE_ERROR) exit(65);
+  if (result == INTERPRETER_RUNTIME_ERROR) exit(70);
 }

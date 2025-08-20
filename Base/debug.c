@@ -7,3 +7,8 @@ void Error(const char* message, const int line) {
 void ErrorChar(const char errorChar, const int line) {
   fprintf(stderr, "[Line %d] Error: Unknown character [%c].\n", line, errorChar);
 }
+
+void ErrorSystem(const char* message) {
+  fprintf(stderr, "[System] Error: %s.\n", message);
+  exit(1);
+}

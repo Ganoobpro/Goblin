@@ -1,7 +1,8 @@
 #include "scanner.h"
 
 Scanner scanner;
-static void SkipUnnecessary();
+static Token MakeToken(TokenType type);
+static bool SkipUnnecessary();
 static bool Match(const char targetChar);
 static Token TokenString();
 static Token TokenNumber();
@@ -24,14 +25,6 @@ void InitScanner(const char* source) {
 
 void PrintToken(Token* token) {
   printf("[Token] %.*s %i\n", token->length, token->start, token->type);
-}
-
-Token MakeToken(TokenType type) {
-  return (Token){
-    .start = scanner.start,
-    .length = scanner.current-scanner.start,
-    .type = type
-  };
 }
 
 Token ScanToken() {
@@ -116,6 +109,15 @@ Token ScanToken() {
 }
 
 
+
+static Token MakeToken(TokenType type) {
+  return (Token){
+    .start = scanner.start,
+    .length = scanner.current-scanner.start,
+    .type = type,
+    .line = scanner.line
+  };
+}
 
 static bool SkipUnnecessary() {
   bool endline = false;

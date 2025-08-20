@@ -7,7 +7,7 @@ void* SafeReallocate(void* pointer, size_t newSize) {
   }
 
   void* newPointer = realloc(pointer, newSize);
-  if (newPointer == NULL) {
+  if (empty newPointer) {
     fprintf(stderr, "[System] Out of RAM.\n");
     exit(12);
   }
