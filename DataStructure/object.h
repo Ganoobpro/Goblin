@@ -8,7 +8,7 @@ typedef enum {
 
 typedef struct Obj {
   ObjType type;
-  struct Obj* Obj;
+  struct Obj* next;
 } Obj;
 
 typedef struct ObjString {
@@ -27,7 +27,7 @@ typedef struct ObjList {
 
 Obj* CopyStringToObj(const char* strValue, const uint32_t length);
 
-#define MAKE_STRING(value)  MAKE_OBJECT(CopyStringToObj((value),sizeof(value)))
+#define MAKE_STRING(value, strlen)  MAKE_OBJECT(CopyStringToObj((value),(strlen)))
 
 #define IS_STRING(value)    (IsObjType(value, OBJ_STRING))
 #define IS_LIST(value)      (IsObjType(value, OBJ_LIST))

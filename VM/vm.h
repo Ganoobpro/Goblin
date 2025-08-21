@@ -13,11 +13,13 @@ typedef struct {
   Table* globals;
 
   // Prepare for Garbage Collector
+  Table strings;
   Obj* objects;
 } VM;
 
 void InitVM();
 void FreeVM();
 ConstIndex MakeConstant(Value value);
+void RecordObj(Obj* obj);
 
 #endif

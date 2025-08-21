@@ -9,7 +9,7 @@ void InitValueArray(ValueArray* valueArray) {
 void FreeValueArray(ValueArray* valueArray) {
   valueArray->counter = 0;
   valueArray->capacity = 0;
-  valueArray->values = FREE_ARRAY(valueArray->values);
+  valueArray->values = FREE_ARRAY(Value, valueArray->values);
 }
 
 void AddValue(ValueArray* valueArray, Value value) {

@@ -20,13 +20,13 @@ typedef enum {
   PREC_OR,           // ||
   PREC_AND,          // &&
   PREC_EQUALITY,     // == !=
-  PREC_COMPARARISON, // > >= < <=
+  PREC_COMPARISON,   // > >= < <=
   PREC_SPECIAL_DIV,  // % //
   PREC_TERM,         // + -
   PREC_FACTOR,       // * /
   PREC_POWER,        // **
   PREC_UNARY,        // - !
-  PREC_PRIMARY       // Literals & Grouping
+  PREC_PRIMARY       // Literals
 } Precedence;
 
 typedef struct {

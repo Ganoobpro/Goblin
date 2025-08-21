@@ -31,24 +31,25 @@ ParseRules rules[] = {
   [TOKEN_NUM_DIV] =           {NULL,          Binary,        PREC_SPECIAL_DIV},
   [TOKEN_MODULE] =            {NULL,          Binary,        PREC_SPECIAL_DIV},
   [TOKEN_POWER] =             {NULL,          Binary,        PREC_POWER},
-  [TOKEN_OR] =                {NULL,          NULL,          PREC_NONE},
-  [TOKEN_AND] =               {NULL,          NULL,          PREC_NONE},
-  [TOKEN_BITWISE ] =          {NULL,          NULL,          PREC_NONE},
-  [TOKEN_XOR] =               {NULL,          NULL,          PREC_NONE},
-  [TOKEN_LEFT_SHIFT] =        {NULL,          NULL,          PREC_NONE},
-  [TOKEN_RIGHT_SHIFT] =       {NULL,          NULL,          PREC_NONE},
-  [TOKEN_OR_OR] =             {NULL,          NULL,          PREC_NONE},
-  [TOKEN_AND_AND] =           {NULL,          NULL,          PREC_NONE},
-  [TOKEN_EQUAL_EQUAL] =       {NULL,          NULL,          PREC_NONE},
-  [TOKEN_EQUAL] =             {NULL,          NULL,          PREC_NONE},
-  [TOKEN_LESS] =              {NULL,          NULL,          PREC_NONE},
-  [TOKEN_LESS_EQUAL] =        {NULL,          NULL,          PREC_NONE},
-  [TOKEN_BIGGER] =            {NULL,          NULL,          PREC_NONE},
-  [TOKEN_BIGGER_EQUAL] =      {NULL,          NULL,          PREC_NONE},
-  [TOKEN_NOT] =               {NULL,          NULL,          PREC_NONE},
-  [TOKEN_NOT_EQUAL] =         {NULL,          NULL,          PREC_NONE},
 
-  [TOKEN_LEFT_PARENTHESIS] =  {NULL,          NULL,          PREC_NONE},
+  [TOKEN_OR] =                {NULL,          NULL,          PREC_BIT_OP},
+  [TOKEN_AND] =               {NULL,          NULL,          PREC_BIT_OP},
+  [TOKEN_BITWISE] =           {NULL,          NULL,          PREC_BIT_OP},
+  [TOKEN_XOR] =               {NULL,          NULL,          PREC_BIT_OP},
+  [TOKEN_LEFT_SHIFT] =        {NULL,          NULL,          PREC_BIT_OP},
+  [TOKEN_RIGHT_SHIFT] =       {NULL,          NULL,          PREC_BIT_OP},
+
+  [TOKEN_NOT] =               {Unary,         NULL,          PREC_UNARY},
+  [TOKEN_OR_OR] =             {NULL,          NULL,          PREC_OR},
+  [TOKEN_AND_AND] =           {NULL,          NULL,          PREC_AND},
+  [TOKEN_EQUAL_EQUAL] =       {NULL,          NULL,          PREC_EQUALITY},
+  [TOKEN_NOT_EQUAL] =         {NULL,          NULL,          PREC_EQUALITY},
+  [TOKEN_LESS] =              {NULL,          NULL,          PREC_COMPARISON},
+  [TOKEN_LESS_EQUAL] =        {NULL,          NULL,          PREC_COMPARISON},
+  [TOKEN_BIGGER] =            {NULL,          NULL,          PREC_COMPARISON},
+  [TOKEN_BIGGER_EQUAL] =      {NULL,          NULL,          PREC_COMPARISON},
+
+  [TOKEN_LEFT_PARENTHESIS] =  {Grouping,      NULL,          PREC_NONE},
   [TOKEN_RIGHT_PARENTHESIS] = {NULL,          NULL,          PREC_NONE},
   [TOKEN_LEFT_BRACKET] =      {NULL,          NULL,          PREC_NONE},
   [TOKEN_RIGHT_BRACKET] =     {NULL,          NULL,          PREC_NONE},
@@ -62,6 +63,7 @@ ParseRules rules[] = {
   [TOKEN_TRUE] =              {NULL,          NULL,          PREC_PRIMARY},
   [TOKEN_FALSE] =             {NULL,          NULL,          PREC_PRIMARY},
 
+  [TOKEN_EQUAL] =             {NULL,          NULL,          PREC_ASSIGNMENT},
   [TOKEN_COMMA] =             {NULL,          NULL,          PREC_NONE},
   [TOKEN_DOT] =               {NULL,          NULL,          PREC_NONE},
   [TOKEN_SEMICOLON] =         {NULL,          NULL,          PREC_NONE},
@@ -150,6 +152,10 @@ static void ParsePrecedence(Precedence precedence) {
   while (precedence <= GetRule(parser.current.type)->precedence) {
     Advance();
     ParseFn infixRule = GetRule(parser.previous.type)->infix;
+    if (null infixRule) {
+      ParseErrorAtCurr("Expect operator");
+      return;
+    }
     infixRule();
   }
 }
@@ -173,6 +179,18 @@ static void Number() {
   EmitConstant(MAKE_NUMBER(strtod(parser.previous.start, NULL)));
 }
 
+/*
+TODO: Finish this later
+static void String() {
+  EmitConstant(MAKE_STRING(parser.previous.start, parser.previous.length));
+}
+*/
+
+static void Grouping() {
+  ParsePrecedence(PREC_ASSIGNMENT);
+  Consume(TOKEN_RIGHT_PARENTHESIS, "Expect ')' after expression");
+}
+
 static void Unary() {
   TokenType operatorType = parser.previous.type;
   ParsePrecedence(PREC_UNARY);
@@ -182,7 +200,10 @@ static void Unary() {
       EmitByte(OP_NEGATIVE);
       return;
 
-    // Others
+    case TOKEN_NOT:
+      EmitByte(OP_NOT);
+      return;
+
     default:
       return;
   };
