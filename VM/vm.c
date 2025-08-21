@@ -36,11 +36,12 @@ void RecordObj(Obj* obj) {
 
 static void FreeObject(Obj* object) {
   switch (object->type) {
-    case OBJ_STRING:
+    case OBJ_STRING: {
       ObjString* objstring = (ObjString*) object;
       FREE_ARRAY(char, objstring->start);
       FREE(objstring);
       break;
+    }
   }
 }
 

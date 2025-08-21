@@ -13,6 +13,7 @@ static void EmitByte(uint8_t opcode);
 static void EmitConstant(Value value);
 static void EmitReturn();
 static void Number();
+static void Grouping();
 static void Unary();
 static void Binary();
 

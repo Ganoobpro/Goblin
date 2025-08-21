@@ -1,5 +1,5 @@
 #include "object.h"
-#include "../VM/vm.h"
+// #include "../VM/vm.h"
 
 // FNV-1a + MurmurHash-32
 static inline uint32_t hashString(const char* strPtr) {
@@ -30,6 +30,6 @@ Obj* CopyStringToObj(const char* strValue, const uint32_t length) {
   objStr->start[length] = '\0';
   objStr->hash = hashString(objStr->start);
 
-  RecordObj((Obj*)objStr);
+  // RecordObj((Obj*)objStr);
   return (Obj*)objStr;
 }

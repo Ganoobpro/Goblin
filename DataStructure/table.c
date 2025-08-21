@@ -15,7 +15,7 @@ void InitTable(Table* table) {
 }
 
 void FreeTable(Table* table) {
-  table->entries = FREE_ARRAY(table->entries);
+  table->entries = FREE_ARRAY(Entry, table->entries);
 }
 
 void TableInsert(Table* table, ObjString* key, Value value) {
@@ -100,7 +100,7 @@ static void AdjustTable(Table* table) {
 
   table->counter = ReallocateTableToNewEntries(table, entries);
 
-  table->entries = FREE_ARRAY(table->entries);
+  table->entries = FREE_ARRAY(Entry, table->entries);
   table->entries = entries;
 }
 
