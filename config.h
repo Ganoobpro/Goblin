@@ -5,7 +5,7 @@
 #include "./DataStructure/datastructure.h"
 #include "./Scanner/scanner.c"
 #include "./Compiler/compiler.c"
-#include "./VM/chunk.c"
+#include "./VM/vm.c"
 #include "./interpreter.c"
 #include "./Base/debug.c"
 

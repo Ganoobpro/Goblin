@@ -33,22 +33,22 @@ ParseRules rules[] = {
   [TOKEN_MODULE] =            {NULL,          Binary,        PREC_SPECIAL_DIV},
   [TOKEN_POWER] =             {NULL,          Binary,        PREC_POWER},
 
-  [TOKEN_OR] =                {NULL,          NULL,          PREC_BIT_OP},
-  [TOKEN_AND] =               {NULL,          NULL,          PREC_BIT_OP},
-  [TOKEN_BITWISE] =           {NULL,          NULL,          PREC_BIT_OP},
-  [TOKEN_XOR] =               {NULL,          NULL,          PREC_BIT_OP},
-  [TOKEN_LEFT_SHIFT] =        {NULL,          NULL,          PREC_BIT_OP},
-  [TOKEN_RIGHT_SHIFT] =       {NULL,          NULL,          PREC_BIT_OP},
+  [TOKEN_OR] =                {NULL,          Binary,        PREC_BIT_OP},
+  [TOKEN_AND] =               {NULL,          Binary,        PREC_BIT_OP},
+  [TOKEN_BITWISE] =           {NULL,          Binary,        PREC_BIT_OP},
+  [TOKEN_XOR] =               {NULL,          Binary,        PREC_BIT_OP},
+  [TOKEN_LEFT_SHIFT] =        {NULL,          Binary,        PREC_BIT_OP},
+  [TOKEN_RIGHT_SHIFT] =       {NULL,          Binary,        PREC_BIT_OP},
 
   [TOKEN_NOT] =               {Unary,         NULL,          PREC_UNARY},
-  [TOKEN_OR_OR] =             {NULL,          NULL,          PREC_OR},
-  [TOKEN_AND_AND] =           {NULL,          NULL,          PREC_AND},
-  [TOKEN_EQUAL_EQUAL] =       {NULL,          NULL,          PREC_EQUALITY},
-  [TOKEN_NOT_EQUAL] =         {NULL,          NULL,          PREC_EQUALITY},
-  [TOKEN_LESS] =              {NULL,          NULL,          PREC_COMPARISON},
-  [TOKEN_LESS_EQUAL] =        {NULL,          NULL,          PREC_COMPARISON},
-  [TOKEN_BIGGER] =            {NULL,          NULL,          PREC_COMPARISON},
-  [TOKEN_BIGGER_EQUAL] =      {NULL,          NULL,          PREC_COMPARISON},
+  [TOKEN_OR_OR] =             {NULL,          Binary,        PREC_OR},
+  [TOKEN_AND_AND] =           {NULL,          Binary,        PREC_AND},
+  [TOKEN_EQUAL_EQUAL] =       {NULL,          Binary,        PREC_EQUALITY},
+  [TOKEN_NOT_EQUAL] =         {NULL,          Binary,        PREC_EQUALITY},
+  [TOKEN_LESS] =              {NULL,          Binary,        PREC_COMPARISON},
+  [TOKEN_LESS_EQUAL] =        {NULL,          Binary,        PREC_COMPARISON},
+  [TOKEN_BIGGER] =            {NULL,          Binary,        PREC_COMPARISON},
+  [TOKEN_BIGGER_EQUAL] =      {NULL,          Binary,        PREC_COMPARISON},
 
   [TOKEN_LEFT_PARENTHESIS] =  {Grouping,      NULL,          PREC_NONE},
   [TOKEN_RIGHT_PARENTHESIS] = {NULL,          NULL,          PREC_NONE},
@@ -210,20 +210,37 @@ static void Unary() {
   };
 }
 
+
+
+OpCode binaryRules[] = {
+  [TOKEN_ADD] =               OP_ADD,
+  [TOKEN_MINUS] =             OP_SUB,
+  [TOKEN_MUL] =               OP_MUL,
+  [TOKEN_DIV] =               OP_DIV,
+  [TOKEN_NUM_DIV] =           OP_NUM_DIV,
+  [TOKEN_MODULE] =            OP_MODULE,
+  [TOKEN_POWER] =             OP_POWER,
+
+  [TOKEN_OR] =                OP_OR,
+  [TOKEN_AND] =               OP_AND,
+  [TOKEN_BITWISE] =           OP_BITWISE,
+  [TOKEN_XOR] =               OP_XOR,
+  [TOKEN_LEFT_SHIFT] =        OP_LEFT_SHIFT,
+  [TOKEN_RIGHT_SHIFT] =       OP_RIGHT_SHIFT,
+
+  [TOKEN_NOT] =               OP_NOT,
+  [TOKEN_OR_OR] =             OP_OR_OR,
+  [TOKEN_AND_AND] =           OP_AND_AND,
+  [TOKEN_EQUAL_EQUAL] =       OP_EQUAL_EQUAL,
+  [TOKEN_NOT_EQUAL] =         OP_NOT_EQUAL,
+  [TOKEN_LESS] =              OP_LESS,
+  [TOKEN_LESS_EQUAL] =        OP_LESS_EQUAL,
+  [TOKEN_BIGGER] =            OP_BIGGER,
+  [TOKEN_BIGGER_EQUAL] =      OP_BIGGER_EQUAL,
+};
+
 static void Binary() {
   TokenType operatorType = parser.previous.type;
   ParsePrecedence((GetRule(operatorType)->precedence) + 1);
-
-  switch (operatorType) {
-    case TOKEN_NUM_DIV: EmitByte(OP_NUM_DIV); break;
-    case TOKEN_MODULE:  EmitByte(OP_MODULE);  break;
-    case TOKEN_ADD:     EmitByte(OP_ADD);     break;
-    case TOKEN_MINUS:   EmitByte(OP_SUB);     break;
-    case TOKEN_MUL:     EmitByte(OP_MUL);     break;
-    case TOKEN_DIV:     EmitByte(OP_DIV);     break;
-    case TOKEN_POWER:   EmitByte(OP_POWER);   break; 
-
-    default:
-      return;
-  };
+  EmitByte(binaryRules[parser.previous.type]);
 }

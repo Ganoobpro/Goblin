@@ -12,7 +12,7 @@ void InitVM() {
   InitChunk(vm.chunk);
   InitTable(vm.globals);
 
-  vm.ip = vm.chunk;
+  vm.ip = vm.chunk->code;
   vm.stackTop = vm.stack;
 
   vm.objects = NULL;
@@ -42,6 +42,9 @@ static void FreeObject(Obj* object) {
       FREE(objstring);
       break;
     }
+
+    default:
+      return;
   }
 }
 

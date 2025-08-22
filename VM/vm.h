@@ -1,7 +1,7 @@
 #ifndef GOBLIN_VM_H
 #define GOBLIN_VM_H
 
-#include "chunk.h"
+#include "chunk.c"
 #include "../DataStructure/table.h"
 
 #define STACK_MAX 256
