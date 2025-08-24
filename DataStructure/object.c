@@ -2,12 +2,13 @@
 // #include "../VM/vm.h"
 
 // FNV-1a + MurmurHash-32
-static inline uint32_t hashString(const char* strPtr) {
+static uint32_t hashString(const char* strPtr) {
   // FNV-1a
   uint32_t h = 2166136261u;
   while (*strPtr) {
     h ^= (uint8_t)*strPtr;
     h *= 16777619u;
+    strPtr++;
   }
 
   // MurmurHash-32
@@ -25,11 +26,10 @@ Obj* CopyStringToObj(const char* strValue, const uint32_t length) {
   objStr->obj.type = OBJ_STRING;
   objStr->length = length;
 
-  objStr->start = GROW_ARRAY(char, objStr->start, length+1);
+  objStr->start = ALLOCATE(char, length+1);
   memcpy(objStr->start, strValue, length);
   objStr->start[length] = '\0';
   objStr->hash = hashString(objStr->start);
 
-  // RecordObj((Obj*)objStr);
   return (Obj*)objStr;
 }

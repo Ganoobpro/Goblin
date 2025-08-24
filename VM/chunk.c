@@ -33,6 +33,9 @@ ConstIndex AddConstant(Chunk* chunk, Value value) {
   if (chunk->constants.counter >= CONST_MAX)
     ErrorSystem("Too much constants");
 
+  if (IS_OBJECT(value))
+    RecordObj(GET_OBJECT(value));
+
   AddValue(&chunk->constants, value);
   return (ConstIndex)(chunk->constants.counter-1);
 }
@@ -49,22 +52,58 @@ void PrintChunk(Chunk* chunk) {
     printf("[Line %d] ", chunk->lines[i]);
 
     switch (chunk->code[i]) {
-      case OP_NEGATIVE: printf("OP_NEG\n"); break;
-      case OP_ADD:      printf("OP_ADD\n"); break;
-      case OP_SUB:      printf("OP_SUB\n"); break;
+      case OP_NUM_DIV:       printf("OP_NUM_DIV\n"); break;
+      case OP_MODULE:        printf("OP_MODULE\n"); break;
+      case OP_ADD:           printf("OP_ADD\n"); break;
+      case OP_SUB:           printf("OP_SUB\n"); break;
+      case OP_MUL:           printf("OP_MUL\n"); break;
+      case OP_DIV:           printf("OP_DIV\n"); break;
+      case OP_POWER:         printf("OP_POWER\n"); break;
+      case OP_NEGATIVE:      printf("OP_NEGATIVE\n"); break;
 
-      case OP_CONSTANT:
-        printf("OP_CONSTANT "); i++;
-        printf("%i (%d)\n", (int)chunk->code[i],
-                            GET_NUMBER(GetConstant(chunk, chunk->code[i])));
+      case OP_OR:            printf("OP_OR\n"); break;
+      case OP_AND:           printf("OP_AND\n"); break;
+      case OP_BITWISE:       printf("OP_BITWISE\n"); break;
+      case OP_XOR:           printf("OP_XOR\n"); break;
+      case OP_LEFT_SHIFT:    printf("OP_LEFT_SHIFT\n"); break;
+      case OP_RIGHT_SHIFT:   printf("OP_RIGHT_SHIFT\n"); break;
+
+      case OP_NOT:           printf("OP_NOT\n"); break;
+      case OP_OR_OR:         printf("OP_OR_OR\n"); break;
+      case OP_AND_AND:       printf("OP_AND_AND\n"); break;
+      case OP_EQUAL_EQUAL:   printf("OP_EQUAL_EQUAL\n"); break;
+      case OP_NOT_EQUAL:     printf("OP_NOT_EQUAL\n"); break;
+      case OP_LESS:          printf("OP_LESS\n"); break;
+      case OP_LESS_EQUAL:    printf("OP_LESS_EQUAL\n"); break;
+      case OP_BIGGER:        printf("OP_BIGGER\n"); break;
+      case OP_BIGGER_EQUAL:  printf("OP_BIGGER_EQUAL\n"); break;
+
+      case OP_DECLARE_VAR:
+        i++;
+        printf("OP_DECLARE_VAR %i (%f)\n",
+          (int)chunk->code[i],
+          GET_NUMBER(GetConstant(chunk, chunk->code[i]))
+        );
         break;
 
-      case OP_RETURN:
-        fprintf(stdout, "OP_RETURN\n");
-        return;
+      case OP_GET_VAR:
+        i++;
+        printf("OP_GET_VAR %i (%f)\n",
+          (int)chunk->code[i],
+          GET_NUMBER(GetConstant(chunk, chunk->code[i]))
+        );
+        break;
 
-      default:
-        fprintf(stderr, "Unknown opcode.\n");
+      case OP_CONSTANT:
+        i++;
+        printf("OP_CONSTANT %i (%f)\n",
+          (int)chunk->code[i],
+          GET_NUMBER(GetConstant(chunk, chunk->code[i]))
+        );
+        break;
+
+      case OP_RETURN:        printf("OP_RETURN\n"); break;
+      default:               printf("Unknown OpCode (%i)\n", chunk->code[i]); break;
     };
   }
 }

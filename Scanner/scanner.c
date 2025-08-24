@@ -111,12 +111,12 @@ Token ScanToken() {
 
 
 static Token MakeToken(TokenType type) {
-  return (Token){
-    .start = scanner.start,
-    .length = scanner.current-scanner.start,
-    .type = type,
-    .line = scanner.line
-  };
+  Token token;
+  token.start = scanner.start;
+  token.length = scanner.current - scanner.start;
+  token.type = type;
+  token.line = scanner.line;
+  return token;
 }
 
 static bool SkipUnnecessary() {

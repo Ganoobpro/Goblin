@@ -5,17 +5,26 @@ Chunk* currentCompilerChunk;
 
 static void ParseErrorAt(Token* token, const char* errorMessage);
 static void ParseErrorAtCurr(const char* errorMessage);
+static inline void EqualError();
 static inline ParseRules* GetRule(TokenType type);
 static void Advance();
-static void Consume(TokenType type, const char* errorMessage);
 static void ParsePrecedence(Precedence precedence);
+static void ParseUntilToken(TokenType type, const char* errorMessage);
+static inline void ParseAll();
+static inline void Statement();
+static void Consume(TokenType type, const char* errorMessage);
+static bool TypeMatch(TokenType type);
 static void EmitByte(uint8_t opcode);
+static void EmitBytes(uint8_t opcode1, uint8_t opcode2);
 static void EmitConstant(Value value);
+static ConstIndex GetVarIndex();
 static void EmitReturn();
 static void Number();
+static void String();
 static void Grouping();
 static void Unary();
-static void Binary();
+static void Variable();
+static void Operator();
 
 ParseRules rules[] = {
   [TOKEN_IF] =                {NULL,          NULL,          PREC_NONE},
@@ -25,30 +34,30 @@ ParseRules rules[] = {
   [TOKEN_FUNC] =              {NULL,          NULL,          PREC_NONE},
   [TOKEN_CLASS] =             {NULL,          NULL,          PREC_NONE},
 
-  [TOKEN_ADD] =               {NULL,          Binary,        PREC_TERM},
-  [TOKEN_MINUS] =             {Unary,         Binary,        PREC_TERM},
-  [TOKEN_MUL] =               {NULL,          Binary,        PREC_FACTOR},
-  [TOKEN_DIV] =               {NULL,          Binary,        PREC_FACTOR},
-  [TOKEN_NUM_DIV] =           {NULL,          Binary,        PREC_SPECIAL_DIV},
-  [TOKEN_MODULE] =            {NULL,          Binary,        PREC_SPECIAL_DIV},
-  [TOKEN_POWER] =             {NULL,          Binary,        PREC_POWER},
+  [TOKEN_ADD] =               {NULL,          Operator,      PREC_TERM},
+  [TOKEN_MINUS] =             {Unary,         Operator,      PREC_TERM},
+  [TOKEN_MUL] =               {NULL,          Operator,      PREC_FACTOR},
+  [TOKEN_DIV] =               {NULL,          Operator,      PREC_FACTOR},
+  [TOKEN_NUM_DIV] =           {NULL,          Operator,      PREC_SPECIAL_DIV},
+  [TOKEN_MODULE] =            {NULL,          Operator,      PREC_SPECIAL_DIV},
+  [TOKEN_POWER] =             {NULL,          Operator,      PREC_POWER},
 
-  [TOKEN_OR] =                {NULL,          Binary,        PREC_BIT_OP},
-  [TOKEN_AND] =               {NULL,          Binary,        PREC_BIT_OP},
-  [TOKEN_BITWISE] =           {NULL,          Binary,        PREC_BIT_OP},
-  [TOKEN_XOR] =               {NULL,          Binary,        PREC_BIT_OP},
-  [TOKEN_LEFT_SHIFT] =        {NULL,          Binary,        PREC_BIT_OP},
-  [TOKEN_RIGHT_SHIFT] =       {NULL,          Binary,        PREC_BIT_OP},
+  [TOKEN_OR] =                {NULL,          Operator,      PREC_BIT_OP},
+  [TOKEN_AND] =               {NULL,          Operator,      PREC_BIT_OP},
+  [TOKEN_BITWISE] =           {NULL,          Operator,      PREC_BIT_OP},
+  [TOKEN_XOR] =               {NULL,          Operator,      PREC_BIT_OP},
+  [TOKEN_LEFT_SHIFT] =        {NULL,          Operator,      PREC_BIT_OP},
+  [TOKEN_RIGHT_SHIFT] =       {NULL,          Operator,      PREC_BIT_OP},
 
+  [TOKEN_OR_OR] =             {NULL,          Operator,      PREC_OR},
+  [TOKEN_AND_AND] =           {NULL,          Operator,      PREC_AND},
+  [TOKEN_EQUAL_EQUAL] =       {NULL,          Operator,      PREC_EQUALITY},
+  [TOKEN_NOT_EQUAL] =         {NULL,          Operator,      PREC_EQUALITY},
+  [TOKEN_LESS] =              {NULL,          Operator,      PREC_COMPARISON},
+  [TOKEN_LESS_EQUAL] =        {NULL,          Operator,      PREC_COMPARISON},
+  [TOKEN_BIGGER] =            {NULL,          Operator,      PREC_COMPARISON},
+  [TOKEN_BIGGER_EQUAL] =      {NULL,          Operator,      PREC_COMPARISON},
   [TOKEN_NOT] =               {Unary,         NULL,          PREC_UNARY},
-  [TOKEN_OR_OR] =             {NULL,          Binary,        PREC_OR},
-  [TOKEN_AND_AND] =           {NULL,          Binary,        PREC_AND},
-  [TOKEN_EQUAL_EQUAL] =       {NULL,          Binary,        PREC_EQUALITY},
-  [TOKEN_NOT_EQUAL] =         {NULL,          Binary,        PREC_EQUALITY},
-  [TOKEN_LESS] =              {NULL,          Binary,        PREC_COMPARISON},
-  [TOKEN_LESS_EQUAL] =        {NULL,          Binary,        PREC_COMPARISON},
-  [TOKEN_BIGGER] =            {NULL,          Binary,        PREC_COMPARISON},
-  [TOKEN_BIGGER_EQUAL] =      {NULL,          Binary,        PREC_COMPARISON},
 
   [TOKEN_LEFT_PARENTHESIS] =  {Grouping,      NULL,          PREC_NONE},
   [TOKEN_RIGHT_PARENTHESIS] = {NULL,          NULL,          PREC_NONE},
@@ -57,14 +66,14 @@ ParseRules rules[] = {
   [TOKEN_LEFT_BRACE] =        {NULL,          NULL,          PREC_NONE},
   [TOKEN_RIGHT_BRACE] =       {NULL,          NULL,          PREC_NONE},
 
-  [TOKEN_IDENTIFY] =          {NULL,          NULL,          PREC_PRIMARY},
+  [TOKEN_IDENTIFY] =          {Variable,      NULL,          PREC_PRIMARY},
   [TOKEN_NUMBER] =            {Number,        NULL,          PREC_PRIMARY},
   [TOKEN_STRING] =            {NULL,          NULL,          PREC_PRIMARY},
   [TOKEN_NILL] =              {NULL,          NULL,          PREC_PRIMARY},
   [TOKEN_TRUE] =              {NULL,          NULL,          PREC_PRIMARY},
   [TOKEN_FALSE] =             {NULL,          NULL,          PREC_PRIMARY},
 
-  [TOKEN_EQUAL] =             {NULL,          NULL,          PREC_ASSIGNMENT},
+  [TOKEN_EQUAL] =             {NULL,          EqualError,    PREC_ASSIGNMENT},
   [TOKEN_COMMA] =             {NULL,          NULL,          PREC_NONE},
   [TOKEN_DOT] =               {NULL,          NULL,          PREC_NONE},
   [TOKEN_SEMICOLON] =         {NULL,          NULL,          PREC_NONE},
@@ -76,14 +85,14 @@ ParseRules rules[] = {
 
 bool Compile(Chunk* currentChunk, const char* source) {
   currentCompilerChunk = currentChunk;
-  InitScanner(source);
   parser.hadError = false;
   parser.panicMode = false;
-  Advance();
 
-  ParsePrecedence(PREC_ASSIGNMENT);
-  Consume(TOKEN_EOF, "Expect EOF at the end");
+  InitScanner(source);
+  Advance();
+  ParseAll();
   EmitReturn();
+
   return !parser.hadError;
 }
 
@@ -113,6 +122,10 @@ static void ParseErrorAtCurr(const char* errorMessage) {
   ParseErrorAt(&parser.previous, errorMessage);
 }
 
+static inline void EqualError() {
+  ParseErrorAtCurr("Unexpect '='. Do you mean '=='");
+}
+
 
 
 static inline ParseRules* GetRule(TokenType type) {
@@ -124,21 +137,11 @@ static void Advance() {
 
   while (parser.current.type != TOKEN_EOF) {
     parser.current = ScanToken();
-    if (parser.current.type != TOKEN_ERROR && parser.current.type != TOKEN_EOL)
+    PrintToken(&parser.current);
+    if (parser.current.type != TOKEN_ERROR)
       return;
-
-    if (parser.current.type == TOKEN_ERROR)
-      parser.hadError = true;
+    parser.hadError = true;
   }
-}
-
-static void Consume(TokenType type, const char* errorMessage) {
-  if (parser.current.type == type) {
-    Advance();
-    return;
-  }
-
-  ParseErrorAtCurr(errorMessage);
 }
 
 static void ParsePrecedence(Precedence precedence) {
@@ -152,6 +155,7 @@ static void ParsePrecedence(Precedence precedence) {
 
   while (precedence <= GetRule(parser.current.type)->precedence) {
     Advance();
+    PrintToken(&parser.previous);
     ParseFn infixRule = GetRule(parser.previous.type)->infix;
     if (null infixRule) {
       ParseErrorAtCurr("Expect operator");
@@ -161,34 +165,86 @@ static void ParsePrecedence(Precedence precedence) {
   }
 }
 
+static inline void Statement() {
+  ParsePrecedence(PREC_ASSIGNMENT);
+}
+
+static void ParseUntilToken(TokenType type, const char* errorMessage) {
+  until (parser.current.type == type) {
+    if (parser.current.type == TOKEN_EOF || parser.current.type == TOKEN_SEMICOLON) {
+      ParseErrorAtCurr(errorMessage);
+      return;
+    }
+
+    Statement();
+  }
+}
+
+static inline void ParseAll() {
+  until (parser.current.type == TOKEN_EOF) {
+    Statement();
+    Advance();
+  }
+}
+
+static void Consume(TokenType type, const char* errorMessage) {
+  if (parser.current.type == type) {
+    Advance();
+    return;
+  }
+
+  ParseErrorAtCurr(errorMessage);
+}
+
+static bool TypeMatch(TokenType type) {
+  if (parser.current.type != type)
+    return false;
+
+  Advance();
+  return true;
+}
+
 
 
 static void EmitByte(uint8_t opcode) {
   WriteChunk(currentCompilerChunk, parser.previous.line, opcode);
 }
 
+static void EmitBytes(uint8_t opcode1, uint8_t opcode2) {
+  EmitByte(opcode1);
+  EmitByte(opcode2);
+}
+
 static void EmitConstant(Value value) {
-  EmitByte(OP_CONSTANT);
-  EmitByte(AddConstant(currentCompilerChunk, value));
+  EmitBytes(
+    OP_CONSTANT,
+    AddConstant(currentCompilerChunk, value)
+  );
+}
+
+static ConstIndex GetVarIndex() {
+  return AddConstant(
+    currentCompilerChunk,
+    MAKE_STRING(parser.previous.start, parser.previous.length)
+  );
 }
 
 static void EmitReturn() {
   EmitByte(OP_RETURN);
 }
 
+
+
 static void Number() {
   EmitConstant(MAKE_NUMBER(strtod(parser.previous.start, NULL)));
 }
 
-/*
-TODO: Finish this later
 static void String() {
   EmitConstant(MAKE_STRING(parser.previous.start, parser.previous.length));
 }
-*/
 
 static void Grouping() {
-  ParsePrecedence(PREC_ASSIGNMENT);
+  Statement();
   Consume(TOKEN_RIGHT_PARENTHESIS, "Expect ')' after expression");
 }
 
@@ -197,22 +253,28 @@ static void Unary() {
   ParsePrecedence(PREC_UNARY);
 
   switch (operatorType) {
-    case TOKEN_MINUS:
-      EmitByte(OP_NEGATIVE);
-      return;
-
-    case TOKEN_NOT:
-      EmitByte(OP_NOT);
-      return;
+    case TOKEN_MINUS: EmitByte(OP_NEGATIVE); return;
+    case TOKEN_NOT:   EmitByte(OP_NOT); return;
 
     default:
       return;
   };
 }
 
+static void Variable() {
+  ConstIndex idIndex = GetVarIndex();
+
+  if (TypeMatch(TOKEN_EQUAL)) {
+    Statement();
+    EmitBytes(OP_DECLARE_VAR, idIndex);
+  } else {
+    EmitBytes(OP_GET_VAR, idIndex);
+  }
+}
 
 
-OpCode binaryRules[] = {
+
+OpCode operatorRules[] = {
   [TOKEN_ADD] =               OP_ADD,
   [TOKEN_MINUS] =             OP_SUB,
   [TOKEN_MUL] =               OP_MUL,
@@ -239,8 +301,8 @@ OpCode binaryRules[] = {
   [TOKEN_BIGGER_EQUAL] =      OP_BIGGER_EQUAL,
 };
 
-static void Binary() {
+static void Operator() {
   TokenType operatorType = parser.previous.type;
   ParsePrecedence((GetRule(operatorType)->precedence) + 1);
-  EmitByte(binaryRules[parser.previous.type]);
+  EmitByte(operatorRules[operatorType]);
 }

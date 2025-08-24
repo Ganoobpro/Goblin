@@ -27,7 +27,8 @@ typedef struct ObjList {
 
 Obj* CopyStringToObj(const char* strValue, const uint32_t length);
 
-#define MAKE_STRING(value, strlen)  MAKE_OBJECT(CopyStringToObj((value),(strlen)))
+#define MAKE_STRING(value, strlen) \
+  ((Value){OBJECT,{.obj=CopyStringToObj((value),(strlen))}})
 
 #define IS_STRING(value)    (IsObjType(value, OBJ_STRING))
 #define IS_LIST(value)      (IsObjType(value, OBJ_LIST))

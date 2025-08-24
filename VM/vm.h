@@ -14,7 +14,7 @@ typedef struct {
   Table* globals;
 
   // Prepare for Garbage Collector
-  Table strings;
+  Table* strings;
   Obj* objects;
 } VM;
 

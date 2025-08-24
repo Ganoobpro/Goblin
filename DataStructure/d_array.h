@@ -6,6 +6,8 @@ void* SafeReallocate(void* pointer, size_t newSize);
 //////////  DYNAMIC ARRAY  //////////
 #define GROW_CAPACITY(capacity) \
   (((capacity) < 8) ? 8 : ((capacity)*2))
+#define ALLOCATE(type, newCapacity) \
+  (type*)SafeReallocate(NULL, sizeof(type)*newCapacity)
 #define GROW_ARRAY(type, pointer, newCapacity) \
   (type*)SafeReallocate(pointer, sizeof(type)*newCapacity)
 #define FREE_ARRAY(type, pointer) \

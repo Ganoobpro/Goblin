@@ -1,6 +1,6 @@
 #include "vm.h"
 
-VM vm; // The UNIQUE :shocked:
+extern VM vm;
 
 static void PushVM(Value value);
 static Value PopVM();
@@ -9,8 +9,13 @@ static void FreeObjects(Obj* objects);
 static void StackFree();
 
 void InitVM() {
+  vm.chunk = (Chunk*) malloc(sizeof(Chunk));
   InitChunk(vm.chunk);
+
+  vm.globals = (Table*) malloc(sizeof(Table));
   InitTable(vm.globals);
+  vm.strings = (Table*) malloc(sizeof(Table));
+  InitTable(vm.strings);
 
   vm.ip = vm.chunk->code;
   vm.stackTop = vm.stack;
@@ -21,6 +26,7 @@ void InitVM() {
 void FreeVM() {
   FreeChunk(vm.chunk);
   FreeTable(vm.globals);
+  FreeTable(vm.strings);
   FreeObjects(vm.objects);
   StackFree();
 }

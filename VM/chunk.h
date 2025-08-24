@@ -21,6 +21,8 @@ typedef enum {
   OP_LESS_EQUAL, OP_BIGGER,
   OP_BIGGER_EQUAL,
 
+  OP_DECLARE_VAR, OP_GET_VAR,
+
   OP_CONSTANT,
   OP_RETURN
 } OpCode;
@@ -32,6 +34,8 @@ typedef struct {
   uint8_t* code;
   ValueArray constants;
 } Chunk;
+
+void RecordObj(Obj* obj);
 
 void InitChunk(Chunk* chunk);
 void FreeChunk(Chunk* chunk);

@@ -1,15 +1,16 @@
 #include "interpreter.h"
 
-Chunk chunkPtr;
+VM vm; // The UNIQUE
 
+// TODO: Fix compiler
 InterpreterResult Interpreter(const char* source) {
-  InitChunk(&chunkPtr);
-  if (Compile(&chunkPtr, source)) {
-    PrintChunk(&chunkPtr);
-    FreeChunk(&chunkPtr);
+  InitVM();
+  if (Compile(vm.chunk, source)) {
+    PrintChunk(vm.chunk);
+    FreeChunk(vm.chunk);
     return INTERPRETER_OK;
   }
 
-  FreeChunk(&chunkPtr);
+  FreeChunk(vm.chunk);
   return INTERPRETER_COMPILE_ERROR;
 }
