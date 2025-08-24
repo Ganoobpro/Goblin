@@ -33,3 +33,16 @@ Obj* CopyStringToObj(const char* strValue, const uint32_t length) {
 
   return (Obj*)objStr;
 }
+
+void PrintObject(Obj* obj) {
+  switch (obj->type) {
+    case OBJ_STRING: {
+      ObjString* objStr = (ObjString*) obj;
+      printf("[STRING]  %.*s\n", objStr->length, objStr->start);
+      return;
+    }
+
+    default:
+      return;
+  }
+}
