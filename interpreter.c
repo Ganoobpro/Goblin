@@ -2,7 +2,6 @@
 
 VM vm; // The UNIQUE
 
-// TODO: Fix compiler
 InterpreterResult Interpreter(const char* source) {
   InitVM();
   if (Compile(vm.chunk, source)) {

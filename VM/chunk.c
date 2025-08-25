@@ -47,43 +47,46 @@ static Value GetConstant(Chunk* chunk, ConstIndex index) {
   return chunk->constants.values[index];
 }
 
+const char* OpCodeNames[] = {
+  [OP_NUM_DIV]      = "OP_NUM_DIV",
+  [OP_MODULE]       = "OP_MODULE",
+  [OP_ADD]          = "OP_ADD",
+  [OP_SUB]          = "OP_SUB",
+  [OP_MUL]          = "OP_MUL",
+  [OP_DIV]          = "OP_DIV",
+  [OP_POWER]        = "OP_POWER",
+  [OP_NEGATIVE]     = "OP_NEGATIVE",
+
+  [OP_OR]           = "OP_OR",
+  [OP_AND]          = "OP_AND",
+  [OP_BITWISE]      = "OP_BITWISE",
+  [OP_XOR]          = "OP_XOR",
+  [OP_LEFT_SHIFT]   = "OP_LEFT_SHIFT",
+  [OP_RIGHT_SHIFT]  = "OP_RIGHT_SHIFT",
+
+  [OP_NOT]          = "OP_NOT",
+  [OP_OR_OR]        = "OP_OR_OR",
+  [OP_AND_AND]      = "OP_AND_AND",
+  [OP_EQUAL_EQUAL]  = "OP_EQUAL_EQUAL",
+  [OP_NOT_EQUAL]    = "OP_NOT_EQUAL",
+  [OP_LESS]         = "OP_LESS",
+  [OP_LESS_EQUAL]   = "OP_LESS_EQUAL",
+  [OP_BIGGER]       = "OP_BIGGER",
+  [OP_BIGGER_EQUAL] = "OP_BIGGER_EQUAL",
+
+  [OP_DECLARE_VAR]  = "OP_DECLARE_VAR",
+  [OP_GET_VAR]      = "OP_GET_VAR",
+
+  [OP_JUMP_COND]    = "OP_JUMP_COND",
+  [OP_JUMP]         = "OP_JUMP",
+
+  [OP_CONSTANT]     = "OP_CONSTANT",
+  [OP_RETURN]       = "OP_RETURN",
+};
+
 void PrintChunk(Chunk* chunk) {
-  const char* OpCodeNames[] = {
-    [OP_NUM_DIV]      = "OP_NUM_DIV",
-    [OP_MODULE]       = "OP_MODULE",
-    [OP_ADD]          = "OP_ADD",
-    [OP_SUB]          = "OP_SUB",
-    [OP_MUL]          = "OP_MUL",
-    [OP_DIV]          = "OP_DIV",
-    [OP_POWER]        = "OP_POWER",
-    [OP_NEGATIVE]     = "OP_NEGATIVE",
-
-    [OP_OR]           = "OP_OR",
-    [OP_AND]          = "OP_AND",
-    [OP_BITWISE]      = "OP_BITWISE",
-    [OP_XOR]          = "OP_XOR",
-    [OP_LEFT_SHIFT]   = "OP_LEFT_SHIFT",
-    [OP_RIGHT_SHIFT]  = "OP_RIGHT_SHIFT",
-
-    [OP_NOT]          = "OP_NOT",
-    [OP_OR_OR]        = "OP_OR_OR",
-    [OP_AND_AND]      = "OP_AND_AND",
-    [OP_EQUAL_EQUAL]  = "OP_EQUAL_EQUAL",
-    [OP_NOT_EQUAL]    = "OP_NOT_EQUAL",
-    [OP_LESS]         = "OP_LESS",
-    [OP_LESS_EQUAL]   = "OP_LESS_EQUAL",
-    [OP_BIGGER]       = "OP_BIGGER",
-    [OP_BIGGER_EQUAL] = "OP_BIGGER_EQUAL",
-
-    [OP_DECLARE_VAR]  = "OP_DECLARE_VAR",
-    [OP_GET_VAR]      = "OP_GET_VAR",
-
-    [OP_CONSTANT]     = "OP_CONSTANT",
-    [OP_RETURN]       = "OP_RETURN",
-  };
-
   for (uint32_t i=0; i<chunk->counter; i++) {
-    printf("[Line %d] %s",
+    printf("[Line %d] %-15s",
       chunk->lines[i],
       OpCodeNames[chunk->code[i]]
     );
@@ -101,6 +104,14 @@ void PrintChunk(Chunk* chunk) {
           chunk->code[i]
         )
       );
-    } else printf("\n");
+    } elif (
+      chunk->code[i] == OP_JUMP_COND ||
+      chunk->code[i] == OP_JUMP
+    ) {
+      printf(" %u\n", (chunk->code[i+1] << 8) + chunk->code[i+2]);
+      i+=2;
+    } else {
+      printf("\n");
+    }
   }
 }

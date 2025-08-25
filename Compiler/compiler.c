@@ -3,36 +3,48 @@
 Parser parser;
 Chunk* currentCompilerChunk;
 
+
+
 static void ParseErrorAt(Token* token, const char* errorMessage);
 static void ParseErrorAtCurr(const char* errorMessage);
 static inline void EqualError();
+
 static inline ParseRules* GetRule(TokenType type);
 static void Advance();
 static void ParsePrecedence(Precedence precedence);
-static void ParseUntilToken(TokenType type, const char* errorMessage);
-static inline void ParseAll();
 static inline void Statement();
+static void ParseUntil(TokenType type, const char* errorMessage);
+static inline void ParseAll();
 static void Consume(TokenType type, const char* errorMessage);
 static bool TypeMatch(TokenType type);
-static void EmitByte(uint8_t opcode);
-static void EmitBytes(uint8_t opcode1, uint8_t opcode2);
+
+static void EmitByte(uint8_t instruction);
+static void EmitBytes(uint8_t instruction1, uint8_t instruction2);
+static uint32_t EmitJump(uint8_t instruction);
 static void EmitConstant(Value value);
 static ConstIndex GetVarIndex();
 static void EmitReturn();
+
 static void Number();
 static void String();
 static void Grouping();
+static void CodeChunk();
 static void Unary();
 static void Variable();
+static void PatchJump(uint32_t offset);
+static void IfElse();
+
 static void Operator();
 
+
+
 ParseRules rules[] = {
-  [TOKEN_IF] =                {NULL,          NULL,          PREC_NONE},
+  [TOKEN_IF] =                {IfElse,        NULL,          PREC_ASSIGNMENT},
   [TOKEN_ELSE] =              {NULL,          NULL,          PREC_NONE},
-  [TOKEN_FOR] =               {NULL,          NULL,          PREC_NONE},
-  [TOKEN_WHILE] =             {NULL,          NULL,          PREC_NONE},
-  [TOKEN_FUNC] =              {NULL,          NULL,          PREC_NONE},
-  [TOKEN_CLASS] =             {NULL,          NULL,          PREC_NONE},
+  [TOKEN_FOR] =               {NULL,          NULL,          PREC_ASSIGNMENT},
+  [TOKEN_WHILE] =             {NULL,          NULL,          PREC_ASSIGNMENT},
+  [TOKEN_FUNC] =              {NULL,          NULL,          PREC_ASSIGNMENT},
+  [TOKEN_CLASS] =             {NULL,          NULL,          PREC_ASSIGNMENT},
 
   [TOKEN_ADD] =               {NULL,          Operator,      PREC_TERM},
   [TOKEN_MINUS] =             {Unary,         Operator,      PREC_TERM},
@@ -63,7 +75,7 @@ ParseRules rules[] = {
   [TOKEN_RIGHT_PARENTHESIS] = {NULL,          NULL,          PREC_NONE},
   [TOKEN_LEFT_BRACKET] =      {NULL,          NULL,          PREC_NONE},
   [TOKEN_RIGHT_BRACKET] =     {NULL,          NULL,          PREC_NONE},
-  [TOKEN_LEFT_BRACE] =        {NULL,          NULL,          PREC_NONE},
+  [TOKEN_LEFT_BRACE] =        {CodeChunk,     NULL,          PREC_NONE},
   [TOKEN_RIGHT_BRACE] =       {NULL,          NULL,          PREC_NONE},
 
   [TOKEN_IDENTIFY] =          {Variable,      NULL,          PREC_PRIMARY},
@@ -133,11 +145,10 @@ static inline ParseRules* GetRule(TokenType type) {
 }
 
 static void Advance() {
-  parser.previous = parser.current;
-
   while (parser.current.type != TOKEN_EOF) {
+    parser.previous = parser.current;
     parser.current = ScanToken();
-    PrintToken(&parser.current);
+
     if (parser.current.type != TOKEN_ERROR)
       return;
     parser.hadError = true;
@@ -155,7 +166,6 @@ static void ParsePrecedence(Precedence precedence) {
 
   while (precedence <= GetRule(parser.current.type)->precedence) {
     Advance();
-    PrintToken(&parser.previous);
     ParseFn infixRule = GetRule(parser.previous.type)->infix;
     if (null infixRule) {
       ParseErrorAtCurr("Expect operator");
@@ -165,19 +175,29 @@ static void ParsePrecedence(Precedence precedence) {
   }
 }
 
-static inline void Statement() {
-  ParsePrecedence(PREC_ASSIGNMENT);
+static void Statement() {
+  if (parser.current.type != TOKEN_SEMICOLON && parser.current.type != TOKEN_EOL) {
+    ParsePrecedence(PREC_ASSIGNMENT);
+  }
 }
 
-static void ParseUntilToken(TokenType type, const char* errorMessage) {
-  until (parser.current.type == type) {
-    if (parser.current.type == TOKEN_EOF || parser.current.type == TOKEN_SEMICOLON) {
-      ParseErrorAtCurr(errorMessage);
-      return;
+static void ParseUntil(TokenType type, const char* errorMessage) {
+  if (TypeMatch(type))
+    return;
+
+  until (
+    parser.current.type == TOKEN_EOF ||
+    parser.current.type == type
+  ) {
+    Statement();
+    if (parser.current.type == type) {
+      break;
     }
 
-    Statement();
+    Advance();
   }
+
+  Consume(type, errorMessage);
 }
 
 static inline void ParseAll() {
@@ -206,13 +226,20 @@ static bool TypeMatch(TokenType type) {
 
 
 
-static void EmitByte(uint8_t opcode) {
-  WriteChunk(currentCompilerChunk, parser.previous.line, opcode);
+static void EmitByte(uint8_t instruction) {
+  WriteChunk(currentCompilerChunk, parser.previous.line, instruction);
 }
 
-static void EmitBytes(uint8_t opcode1, uint8_t opcode2) {
-  EmitByte(opcode1);
-  EmitByte(opcode2);
+static void EmitBytes(uint8_t instruction1, uint8_t instruction2) {
+  EmitByte(instruction1);
+  EmitByte(instruction2);
+}
+
+static uint32_t EmitJump(uint8_t instruction) {
+  EmitByte(instruction);
+  EmitByte(0xff);
+  EmitByte(0xff);
+  return currentCompilerChunk->counter - 2;
 }
 
 static void EmitConstant(Value value) {
@@ -244,8 +271,15 @@ static void String() {
 }
 
 static void Grouping() {
+  if (TypeMatch(TOKEN_RIGHT_PARENTHESIS))
+    return;
+
   Statement();
   Consume(TOKEN_RIGHT_PARENTHESIS, "Expect ')' after expression");
+}
+
+static void CodeChunk() {
+  ParseUntil(TOKEN_RIGHT_BRACE, "Expect '}' after expression");
 }
 
 static void Unary() {
@@ -269,6 +303,36 @@ static void Variable() {
     EmitBytes(OP_DECLARE_VAR, idIndex);
   } else {
     EmitBytes(OP_GET_VAR, idIndex);
+  }
+}
+
+static void PatchJump(uint32_t offset) {
+  uint32_t jumpStep = currentCompilerChunk->counter - 2 - offset;
+
+  if (jumpStep > UINT16_MAX)
+    ParseErrorAtCurr("Too much code to jump over");
+
+  // jumpStep is 16-bit number
+  // however each code only have 8-bit
+  // -> must split jumpStep
+  currentCompilerChunk->code[offset] = (jumpStep >> 8) & 0xff;
+  currentCompilerChunk->code[offset+1] = jumpStep & 0xff;
+}
+
+static void IfElse() {
+  // If
+  Statement(); // Get condition
+  uint32_t jump = EmitJump(OP_JUMP_COND);
+  uint32_t elseJump = EmitJump(OP_JUMP);
+  PatchJump(jump);
+  Statement(); // Get line/chunk of code
+
+  // Else
+  if (TypeMatch(TOKEN_ELSE)) {
+    jump = EmitJump(OP_JUMP);
+    PatchJump(elseJump);
+    Statement(); // Get else line/chunk of code
+    PatchJump(jump);
   }
 }
 

@@ -23,6 +23,8 @@ typedef enum {
 
   OP_DECLARE_VAR, OP_GET_VAR,
 
+  OP_JUMP_COND, OP_JUMP,
+
   OP_CONSTANT,
   OP_RETURN
 } OpCode;
