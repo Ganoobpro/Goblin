@@ -86,7 +86,7 @@ const char* OpCodeNames[] = {
 
 void PrintChunk(Chunk* chunk) {
   for (uint32_t i=0; i<chunk->counter; i++) {
-    printf("[Line %d] %-15s",
+    printf("[Line %03d] %-20s",
       chunk->lines[i],
       OpCodeNames[chunk->code[i]]
     );
@@ -97,7 +97,7 @@ void PrintChunk(Chunk* chunk) {
       chunk->code[i] == OP_CONSTANT
     ) {
       i++;
-      printf(" %u   ", chunk->code[i]);
+      printf(" %03u   ", chunk->code[i]);
       PrintValue(
         GetConstant(
           chunk,
@@ -108,7 +108,7 @@ void PrintChunk(Chunk* chunk) {
       chunk->code[i] == OP_JUMP_COND ||
       chunk->code[i] == OP_JUMP
     ) {
-      printf(" %u\n", (chunk->code[i+1] << 8) + chunk->code[i+2]);
+      printf(" %03u\n", (chunk->code[i+1] << 8) + chunk->code[i+2]);
       i+=2;
     } else {
       printf("\n");

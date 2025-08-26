@@ -135,7 +135,7 @@ static void ParseErrorAtCurr(const char* errorMessage) {
 }
 
 static inline void EqualError() {
-  ParseErrorAtCurr("Unexpect '='. Do you mean '=='");
+  ParseErrorAtCurr("Unexpect '='. Did you mean '=='?");
 }
 
 
@@ -164,6 +164,14 @@ static void ParsePrecedence(Precedence precedence) {
   }
   prefixRule();
 
+  // Exception
+  if (
+    parser.previous.type == TOKEN_RIGHT_PARENTHESIS ||
+    parser.previous.type == TOKEN_RIGHT_BRACE
+  ) {
+    return;
+  }
+
   while (precedence <= GetRule(parser.current.type)->precedence) {
     Advance();
     ParseFn infixRule = GetRule(parser.previous.type)->infix;
@@ -176,34 +184,46 @@ static void ParsePrecedence(Precedence precedence) {
 }
 
 static void Statement() {
-  if (parser.current.type != TOKEN_SEMICOLON && parser.current.type != TOKEN_EOL) {
-    ParsePrecedence(PREC_ASSIGNMENT);
+#define REACH_END_OF_COMMAND (parser.current.type == TOKEN_SEMICOLON || parser.current.type == TOKEN_EOL)
+
+  while (REACH_END_OF_COMMAND) {
+    Advance();
   }
+
+  if (TypeMatch(TOKEN_EOF)) {
+    return;
+  }
+
+  ParsePrecedence(PREC_ASSIGNMENT);
 }
 
 static void ParseUntil(TokenType type, const char* errorMessage) {
   if (TypeMatch(type))
     return;
 
-  until (
-    parser.current.type == TOKEN_EOF ||
-    parser.current.type == type
-  ) {
-    Statement();
-    if (parser.current.type == type) {
+#define FIND_TYPE (parser.current.type == TOKEN_EOF || parser.current.type == type)
+
+  until (FIND_TYPE) {
+    while (REACH_END_OF_COMMAND) {
+      Advance();
+    }
+
+    if (FIND_TYPE) {
       break;
     }
 
-    Advance();
+    ParsePrecedence(PREC_ASSIGNMENT);
   }
 
   Consume(type, errorMessage);
+
+#undef REACH_END_OF_COMMAND
+#undef FIND_TYPE
 }
 
 static inline void ParseAll() {
   until (parser.current.type == TOKEN_EOF) {
     Statement();
-    Advance();
   }
 }
 
@@ -271,11 +291,7 @@ static void String() {
 }
 
 static void Grouping() {
-  if (TypeMatch(TOKEN_RIGHT_PARENTHESIS))
-    return;
-
-  Statement();
-  Consume(TOKEN_RIGHT_PARENTHESIS, "Expect ')' after expression");
+  ParseUntil(TOKEN_RIGHT_PARENTHESIS, "Expect ')' after expression");
 }
 
 static void CodeChunk() {
@@ -328,6 +344,11 @@ static void IfElse() {
   Statement(); // Get line/chunk of code
 
   // Else
+  TypeMatch(TOKEN_SEMICOLON);
+  while (parser.current.type == TOKEN_EOL) {
+    Advance();
+  }
+
   if (TypeMatch(TOKEN_ELSE)) {
     jump = EmitJump(OP_JUMP);
     PatchJump(elseJump);
