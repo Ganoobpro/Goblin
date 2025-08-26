@@ -176,11 +176,6 @@ static void ParsePrecedence(Precedence precedence) {
 
   while (precedence <= GetRule(parser.current.type)->precedence) {
     PrintToken(&parser.previous);
-    Advance();
-    printf("-----");
-    PrintToken(&parser.previous);
-    printf("----------");
-    PrintToken(&parser.current);
     ParseFn infixRule = GetRule(parser.previous.type)->infix;
     if (null infixRule) {
       ParseErrorAtCurr("Expect operator");
@@ -262,13 +257,6 @@ static void EmitBytes(uint8_t instruction1, uint8_t instruction2) {
   EmitByte(instruction2);
 }
 
-static uint32_t EmitJump(uint8_t instruction) {
-  EmitByte(instruction);
-  EmitByte(0xff);
-  EmitByte(0xff);
-  return currentCompilerChunk->counter - 2;
-}
-
 static void EmitConstant(Value value) {
   EmitBytes(
     OP_CONSTANT,
@@ -281,6 +269,24 @@ static ConstIndex GetVarIndex() {
     currentCompilerChunk,
     MAKE_STRING(parser.previous.start, parser.previous.length)
   );
+}
+
+static uint32_t EmitJump(uint8_t instruction) {
+  EmitByte(instruction);
+  EmitByte(0xff);
+  EmitByte(0xff);
+  return currentCompilerChunk->counter - 2;
+}
+
+static uint32_t EmitLoop(uint32_t startLoop) {
+  uint32_t jumpStep = currentCompilerChunk->counter - startLoop + 2;
+  if (jumpStep > UINT16_MAX) {
+    ParseErrorAtCurr("Loop body too large");
+  }
+
+  EmitByte(OP_LOOP);
+  EmitByte((jumpStep >> 8) & 0xff);
+  EmitByte(jumpStep & 0xff);
 }
 
 static void EmitReturn() {
@@ -329,6 +335,8 @@ static void Variable() {
   }
 }
 
+
+
 static void PatchJump(uint32_t offset) {
   uint32_t jumpStep = currentCompilerChunk->counter - 2 - offset;
 
@@ -342,26 +350,38 @@ static void PatchJump(uint32_t offset) {
   currentCompilerChunk->code[offset+1] = jumpStep & 0xff;
 }
 
-static void IfElse() {
-  // If
+static uint32_t IfCommand() {
   Statement(); // Get condition
   uint32_t jump = EmitJump(OP_JUMP_COND);
   uint32_t elseJump = EmitJump(OP_JUMP);
   PatchJump(jump);
   Statement(); // Get line/chunk of code
+  return elseJump;
+}
+
+static void IfElse() {
+  uint32_t elseJump = IfCommand();
+
+  // Skip
+  TypeMatch(TOKEN_SEMICOLON);
+  TypeMatch(TOKEN_EOL);
 
   // Else
-  TypeMatch(TOKEN_SEMICOLON);
-  while (parser.current.type == TOKEN_EOL) {
-    Advance();
-  }
-
   if (TypeMatch(TOKEN_ELSE)) {
     jump = EmitJump(OP_JUMP);
     PatchJump(elseJump);
     Statement(); // Get else line/chunk of code
     PatchJump(jump);
+  } else {
+    PatchJump(elseJump);
   }
+}
+
+static void WhileCommand() {
+  uint32_t startLoop = currentCompilerChunk->counter;
+  uint32_t elseJump = IfCommand();
+  EmitLoop(startLoop);
+  PatchJump(elseJump);
 }
 
 

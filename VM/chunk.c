@@ -79,6 +79,7 @@ const char* OpCodeNames[] = {
 
   [OP_JUMP_COND]    = "OP_JUMP_COND",
   [OP_JUMP]         = "OP_JUMP",
+  [OP_LOOP]         = "OP_LOOP",
 
   [OP_CONSTANT]     = "OP_CONSTANT",
   [OP_RETURN]       = "OP_RETURN",
@@ -106,7 +107,8 @@ void PrintChunk(Chunk* chunk) {
       );
     } elif (
       chunk->code[i] == OP_JUMP_COND ||
-      chunk->code[i] == OP_JUMP
+      chunk->code[i] == OP_JUMP ||
+      chunk->code[i] == OP_LOOP
     ) {
       printf(" %03u\n", (chunk->code[i+1] << 8) + chunk->code[i+2]);
       i+=2;
