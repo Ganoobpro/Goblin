@@ -137,8 +137,7 @@ static bool SkipUnnecessary() {
       scanner.line++;
     } else if (*scanner.current == '/' && scanner.current[1] == '*')
       until (IsAtTheEnd || (*scanner.current++ == '*' && *scanner.current == '/')) {}
-
-    ifnot (IsAtTheEnd)
+    else ifnot (IsAtTheEnd)
       scanner.current++;
   }
 

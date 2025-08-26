@@ -167,13 +167,20 @@ static void ParsePrecedence(Precedence precedence) {
   // Exception
   if (
     parser.previous.type == TOKEN_RIGHT_PARENTHESIS ||
-    parser.previous.type == TOKEN_RIGHT_BRACE
+    parser.previous.type == TOKEN_RIGHT_BRACE ||
+    parser.previous.type == TOKEN_SEMICOLON ||
+    parser.previous.type == TOKEN_EOL
   ) {
     return;
   }
 
   while (precedence <= GetRule(parser.current.type)->precedence) {
+    PrintToken(&parser.previous);
     Advance();
+    printf("-----");
+    PrintToken(&parser.previous);
+    printf("----------");
+    PrintToken(&parser.current);
     ParseFn infixRule = GetRule(parser.previous.type)->infix;
     if (null infixRule) {
       ParseErrorAtCurr("Expect operator");
